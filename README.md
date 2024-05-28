@@ -1,0 +1,10 @@
+littéralement
+=============
+
+__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) pour l'analyse de texte construit selon un modèle [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) hybride.
+
+modèle EAV hybride
+------------------
+
+- une première partie implémente le modèle EAV et est destinée à décrire le _monde_ duquel on extrait des textes: qu'il s'agisse des supports matériels des textes, des acteurices sociaux qui les font circuler ou en relisent le contenu, ou encore des événements qui en motive la rédaction. la flexibilité du modèle EAV permet de décrire n'importe quelle chose à l'aide d'un nombre restreint et fixe de tables, et d'ajouter de nouvelles _classes_ ou de nouveaux _types de propriétés_ sans avoir à modifier le schéma. il est particulièrement utile si l'on ne sait pas, au départ d'une recherche, ce qu'on va exactement collecter et la manière dont on va organiser le résultat de la notre collecte. 
+- la seconde partie de la base de données est, à l'inverse, conçue pour accueillir des données dont la structure est à la fois prévisible et invariable, car l'analyse automatique des textes se fait souvent à l'aide d'outils et de concepts de base relativement standard: qu'on utilise la librairie [spacy](https://spacy.io/), [stanza](https://stanfordnlp.github.io/stanza/) ou [nltk](https://www.nltk.org/), on manipulera toujours des _sentences_ et des _tokens_, lesquels _tokens_ se verront quasi-systématiquement attribués, entre autres choses, un _lemma_ (lemme), un _part-of-speech tag_ (nature), un _dependency label_ (fonction), des caractéristiques morphologiques représentées selon le format [FEATS](https://universaldependencies.org/format.html#morphological-annotation), un _id_ numérique indiquant leur position dans le texte, etc. la flexibilité du modèle EAV est donc passablement inutile pour stocker ces données, et, plus encore, elle engendre des baisses de performances considérable et utilise beaucoup plus d'espace.
