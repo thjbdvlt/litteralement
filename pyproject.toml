@@ -1,0 +1,29 @@
+[project]
+name = "littéralement"
+authors = [{name="thjbdvlt"}]
+version = "0.1.0"
+description = "base de données postgresql pour l'analyse de textes en français conçue selon un modèle EAV hybride."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "psycopg",
+]
+
+[project.urls]
+Homepage = "https://github.com/thjbdvlt/litteralement"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages]
+find = {}
+
+[ruff]
+exclude = []
+line-length = 70
+
+[ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = false

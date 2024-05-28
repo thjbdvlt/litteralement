@@ -1,7 +1,7 @@
 littéralement
 =============
 
-__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) pour l'analyse de texte construit selon un modèle [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) hybride.
+__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) conçu pour l'analyse de texte en français et construit selon un modèle [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) hybride.
 
 modèle EAV hybride
 ------------------
