@@ -16,12 +16,17 @@ def get_idx_list(file=None):
         import os
 
         # le fichier par défaut
-        file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "indexes.csv")
+        file = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "indexes.csv"
+        )
 
     with open(file) as f:
         r = csv.reader(f, delimiter=",")
         # construit un dictionnaire à partir du csv
-        idx = [{"table": row[0], "column": row[1], "group": row[2]} for row in r]
+        idx = [
+            {"table": row[0], "column": row[1], "group": row[2]}
+            for row in r
+        ]
 
     # enlève le header s'il y en a un
     if idx[0]["table"] == "table" and idx[0]["column"] == "column":
@@ -54,7 +59,11 @@ def filter_idxs(idxs, groups, tables):
     if len(groups) == len(tables) == 0:
         return idxs
     else:
-        [i for i in idxs if i["group"] in groups or i["table"] in tables]
+        [
+            i
+            for i in idxs
+            if i["group"] in groups or i["table"] in tables
+        ]
     return
 
 

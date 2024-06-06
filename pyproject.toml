@@ -19,11 +19,11 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages]
 find = {}
 
-[ruff]
+[tool.ruff]
 exclude = []
 line-length = 70
 
-[ruff.format]
+[tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 docstring-code-format = false
