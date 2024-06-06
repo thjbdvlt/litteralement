@@ -23,7 +23,9 @@ def load(
     if include_presque is not False:
         import presque
 
-        nlp.add_pipe('presque_normalizer', first=True, config=include_presque)
+        nlp.add_pipe(
+            "presque_normalizer", first=True, config=include_presque
+        )
     if include_quelquhui is not False:
         import quelquhui
 
@@ -33,16 +35,21 @@ def load(
     if include_tokentype is not False:
         import tokentype
 
-        nlp.add_pipe('tokentype', after='tokentype', config=include_tokentype)
+        nlp.add_pipe(
+            "tokentype", after="tokentype", config=include_tokentype
+        )
 
     if include_sent_on_newline is not False:
-
-        nlp.add_pipe('sent_on_newline', after='tokentype')
+        nlp.add_pipe("sent_on_newline", after="tokentype")
 
     if include_viceverser_lemmatizer is not False:
         import viceverser
 
-        nlp.add_pipe('viceverser_lemmatizer', after='morphologizer', config=include_viceverser_lemmatizer)
+        nlp.add_pipe(
+            "viceverser_lemmatizer",
+            after="morphologizer",
+            config=include_viceverser_lemmatizer,
+        )
     return nlp
 
 
@@ -82,8 +89,13 @@ def load_default():
     ]
 
     nlp = load(
-        model=model, exclude=exclude_disable, disable=exclude_disable,
-        include_presque=presque_config, include_quelquhui={'abbrev': abbrev},
-        include_tokentype=True, include_sent_on_newline=True, include_viceverser_lemmatizer=True,
+        model=model,
+        exclude=exclude_disable,
+        disable=exclude_disable,
+        include_presque=presque_config,
+        include_quelquhui={"abbrev": abbrev},
+        include_tokentype=True,
+        include_sent_on_newline=True,
+        include_viceverser_lemmatizer=True,
     )
     return nlp
