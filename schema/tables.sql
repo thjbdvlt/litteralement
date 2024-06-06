@@ -97,8 +97,7 @@ create table nlp.lexeme (
 -- 2.2. seconde partie décrit les mots et segments réels, utilisés dans des contextes (des textes).
 
 create table nlp.segment (
-    classe smallint references onto.classe(id) not null,
-    texte int references nlp.texte(id),
+    texte int references nlp.texte(id) not null,
     debut int not null,
     fin int not null
 );
