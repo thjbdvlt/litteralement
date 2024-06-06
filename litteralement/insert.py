@@ -1,77 +1,82 @@
 import silex
-import psycopg
-from litteralement.utils import get_labels_updated, get_feats
-import litteralement.pipeline
+import tqdm
+import orjson
+import litteralement.statements
 
 
-class Annotater:
-    def __init__(self, dbname="litteralement", **kwargs):
-        conn = psycopg.connect(dbname=dbname)
+def get_lexemes(conn):
+    """Récupérer les lexèmes pour construire un Lookup pour l'annotation.
 
-        nlp = litteralement.pipeline.load_model(**kwargs)
+    Args:
+        conn (Connection)
 
-        dep_labels = nlp.get_pipe("parser").labels
-        pos_labels = silex.lexique.POS_NAMES_LOWER
-        feats_labels = get_feats(nlp)
+    Returns (Generator)
+    """
 
-        pos = get_labels_updated(conn, "nature", pos_labels.values())
-        dep = get_labels_updated(conn, "fonction", dep_labels)
-        morph = get_labels_updated(
-            conn, "morph", feats_labels, colname="feats"
-        )
-        lemmas = get_labels_updated(
-            conn, "lemme", {}, colname="graphie"
-        )
+    cur = conn.cursor()
+    cur.execute(litteralement.statements.SELECT_LEXEMES)
+    for i in cur:
+        yield i
 
-        self.lookup_pos = silex.LookupTable(pos)
-        self.lookup_dep = silex.LookupTable(dep)
-        self.lookup_morph = silex.LookupTable(morph)
-        self.lookup_lemma = silex.LookupTable(lemmas)
 
-        if (
-            "include_tokentype" in kwargs
-            and kwargs["include_tokentype"] is not False
-        ):
+def insert(
+    conn,
+    query,
+    nlp,
+    batch_size=1000,
+    n_process=2,
+    isword=lambda token: token._.tokentype == "word",
+    **kwargs,
+):
+    """Annoter des textes et les insérer dans la base de données.
 
-            def add_token_attrs(token):
-                return {
-                    "dep": self.lookup_dep[token.dep_],
-                    "tokentype": token._.tokentype,
-                }
-        else:
+    Args:
+        conn (Connection)
+        query (str):  SQL select qui doit retourner (id=int, val=text)
+        nlp (Language)
 
-            def add_token_attrs(token):
-                return {"dep": self.lookup_dep[token.dep_]}
+    Optionnel:
+        batch_size (int)
+        n_process (int)
+        isword (callable):  distingue les tokens des mots.
+    """
 
-        if (
-            "include_viceverser" in kwargs
-            and kwargs["include_viceverser"] is not False
-        ):
+    # deux curseurs: il faut pouvoir envoyer tout en continuant de recevoir
+    cur_get = conn.cursor()
+    cur_send = conn.cursor()
 
-            def add_lex_attrs(token):
-                return {
-                    "vv_morph": token._.vv_morph,
-                    "vv_pos": token._.vv_pos,
-                }
-        else:
+    # lance la requête qui SELECT les textes.
+    cur_get.execute(query)
 
-            def add_lex_attrs(token):
-                return {}
+    # crée des tuples pour process avec spacy en conservant les métadonnées.
+    texts = ((record.val, {"id": record.id}) for record in cur_get)
+    docs = nlp.pipe(
+        texts=texts,
+        as_tuples=True,
+        batch_size=batch_size,
+        n_process=n_process,
+        **kwargs,
+    )
 
-        self.lexique = silex.Lexique(
-            get_pos=lambda token: self.lookup_pos[token.pos_],
-            get_lemma=lambda token: self.lookup_lemma[token.lemma_],
-            get_morph=lambda token: self.lookup_morph[
-                str(token.morph)
-            ],
-            get_norm=lambda token: token.norm_,
-            add_token_attrs=add_token_attrs,
-            add_lex_attrs=add_lex_attrs,
-        )
+    # récupérer les lexèmes déjà existants.
+    lexemes = get_lexemes(conn)
+    lexique = silex.Lexique(lexemes=lexemes)
 
-    def __call__(self, doc, **kwargs):
-        return self.lexique(doc, **kwargs)
+    # ajouter les lexèmes, pour pouvoir sérialiser moins de choses.
+    docs = map(lambda i: (lexique(i[0], i[1]["id"])), docs)
 
-    def pipe(self, docs, **kwargs):
-        for i in docs:
-            yield self(i, **kwargs)
+    # sérialiser en JSON
+    todb = map(lambda i: (orjson.dumps(i[0]), i[1]), docs)
+
+    # placer les documents dans la table import._document (la méthode 'COPY' est incroyablement plus rapide qu'une insertion normale).
+    with cur_send.copy("COPY doc._document (id, j) FROM STDIN") as copy:
+        for i in tqdm.tqdm(todb):
+            copy.write_row(i)
+
+    # TODO: l'insertion des lexèmes
+    with cur_send.copy("COPY import.lexeme (j) FROM STDIN") as copy:
+        for i in tqdm.tqdm(orjson.dumps(lexique.lexemes)):
+            copy.write_row(i)
+        # hoooo mais là yaurait moyen déjà de faire qqch héhé!
+        # déjà facile de process les données ici.
+    conn.commit()

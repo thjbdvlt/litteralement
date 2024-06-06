@@ -1,7 +1,5 @@
 from spacy.language import Language
 import spacy
-import silex
-from litteralement.utils import get_labels_updated, get_feats
 
 
 @Language.component("sent_on_newline")
@@ -23,9 +21,9 @@ def load_model(
     model="fr_core_news_lg",
     include_presque={},
     include_tokentype={},
-    include_viceverser_lemmatizer={},
     include_quelquhui={},
     include_sent_on_newline=True,
+    include_viceverser_lemmatizer={},
     **kwargs,
 ):
     """Charge un modèle.
@@ -51,7 +49,9 @@ def load_model(
         import tokentype
 
         nlp.add_pipe(
-            "tokentype", after="tokentype", config=include_tokentype
+            "tokentype",
+            after="presque_normalizer",
+            config=include_tokentype,
         )
 
     if include_sent_on_newline is not False:
@@ -115,50 +115,9 @@ def load_model_default():
         disable=exclude_disable,
         include_presque=presque_config,
         include_quelquhui={"abbrev": abbrev},
-        include_tokentype=True,
+        include_tokentype={},
+        include_viceverser_lemmatizer={},
         include_sent_on_newline=True,
-        include_viceverser_lemmatizer=True,
     )
 
     return nlp
-
-
-def load_silex(conn, nlp, **kwargs):
-    # récupérer les labels du modèle.
-    dep_labels = nlp.get_pipe("parser").labels
-    pos_labels = silex.lexique.POS_NAMES_LOWER
-    feats_labels = get_feats(nlp)
-
-    # récupérer les valeurs existantes dans la base de données:
-    # - pos (nature)
-    pos = get_labels_updated(conn, "nature", pos_labels.values())
-    # - dep (fonction)
-    dep = get_labels_updated(conn, "fonction", dep_labels)
-    # - morph (morphologie au format FEATS)
-    morph = get_labels_updated(
-        conn, "morph", feats_labels, colname="feats"
-    )
-    # - lemmes
-    lemmas = get_labels_updated(conn, "lemme", {}, colname="graphie")
-
-    # construire les objets de lookup qui incrémentent automatiquement les ids.
-    lookup_pos = silex.LookupTable(pos)
-    lookup_dep = silex.LookupTable(dep)
-    lookup_morph = silex.LookupTable(morph)
-    lookup_lemma = silex.LookupTable(lemmas)
-
-    lexique = silex.Lexique(
-        get_pos=lambda token: lookup_pos[token.pos_],
-        get_lemma=lambda token: lookup_lemma[token.lemma_],
-        get_morph=lambda token: lookup_morph[str(token.morph)],
-        get_norm=lambda token: token.norm_,
-        add_token_attrs=lambda token: {
-            "dep": lookup_dep[token.dep_],
-            "tokentype": token._.tokentype,
-        },
-        add_lex_attrs=lambda token: {
-            "vv_morph": token._.vv_morph,
-            "vv_pos": token._.vv_pos,
-        },
-    )
-    return lexique
