@@ -1,6 +1,7 @@
 from psycopg.sql import SQL, Identifier
 import litteralement.seq
 from typing import NamedTuple
+import json
 
 
 class Lookup:
@@ -162,27 +163,33 @@ def get_binary_lookup(
 
 
 class ConceptLookup(Lookup):
-    def __init__(self, conn, tablename, colname='nom', **kwargs):
+    def __init__(self, conn, tablename, colname="nom", **kwargs):
         self.conn = conn
-        self.fetch()
-        super().__init__(**kwargs)
+        self.tablename = tablename
+        self.colname = colname
+        d = self.fetch()
+        super().__init__(d=d, keyname=colname, **kwargs)
 
     def fetch(self):
-        get_binary_lookup(
-            self.conn, tablename=self.tablename, colname=self.colname,
+        return get_binary_lookup(
+            self.conn,
+            tablename=self.tablename,
+            colname=self.colname,
         )
 
-
-class TryConceptLookup(TryLookup):
-    def __init__(self, conn, tablename, colname='nom', **kwargs):
-        self.conn = conn
-        self.fetch()
-        super().__init__(**kwargs)
-
-    def fetch(self):
-        get_binary_lookup(
-            self.conn, tablename=self.tablename, colname=self.colname,
+    def copy_to(self):
+        stmt = SQL("copy {} ({}) from stdin").format(
+            Identifier(self.tablename), Identifier.self.colname
         )
+        existing = set(self.fetch())
+        with self.conn.copy(stmt) as copy:
+            for i in set(self) - existing:
+                copy.write_row((json.dumps(i),))
+
+
+class TryConceptLookup(ConceptLookup, TryLookup):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 def get_pos_lookup(conn):
@@ -198,7 +205,7 @@ def get_morph_lookup(conn):
 
 
 def get_lemma_lookup(conn):
-    return ConceptLookup(conn, 'lemme', 'graphie')
+    return ConceptLookup(conn, "lemme", "graphie")
 
 
 def get_key_spacy(d):
