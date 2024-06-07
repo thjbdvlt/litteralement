@@ -18,8 +18,7 @@ class Lookup:
 
         if not d:
             d = {}
-
-        if isinstance(d, dict):
+        elif isinstance(d, dict):
             pass
         else:
             d = {i[self.keyname]: i["id"] for i in d}
@@ -342,7 +341,7 @@ def get_lemma_lookup(conn):
     return ConceptLookup(conn, "lemme", "graphie")
 
 
-def get_key_spacy(d):
+def get_lex_key_from_spacy(d):
     return (d["lemma"], d["norm"], d["pos"], d["morph"])
 
 
