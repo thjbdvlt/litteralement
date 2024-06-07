@@ -283,7 +283,8 @@ class ConceptLookup(Lookup):
         cur = self.conn.cursor()
         with cur.copy(stmt) as copy:
             for i in set(self.as_tuples()) - existing:
-                copy.write_row((i))
+                # copy.write_row((i))
+                copy.write_row(i)
 
 
 class TryConceptLookup(ConceptLookup, TryLookup):
@@ -350,4 +351,14 @@ class MultiColumnLookup(ConceptLookup):
         super().__init__(**kwargs)
         self.columns = columns
 
-    # def fetch(self)
+    def fetch(self):
+        """Récupère les données déjà présentes dans la table.
+
+        Returns (Lookup)
+        """
+
+        return get_multicolumn_lookup(
+            self.conn,
+            tablename=self.tablename,
+            columns=self.columns,
+        )
