@@ -310,8 +310,11 @@ class MultiColumnLookup(ConceptLookup):
     def as_tuples(self):
         Item = self.Item
         d = self.d
+        # columns = self.columns
         for k in self.d:
-            yield Item(id=d[k], **k._asdict())
+            # yield Item(id=d[k], **k._asdict())
+            yield Item(id=d[k], *k)
+            # yield Item(id=d[k], *[getattr(self, i) for i in columns])
 
 
 def get_pos_lookup(conn):

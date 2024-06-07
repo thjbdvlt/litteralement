@@ -1,5 +1,6 @@
 from spacy.language import Language
 import spacy
+import tokentype
 
 
 @Language.component("sent_on_newline")
@@ -22,7 +23,6 @@ def load_small_model():
 
     Returns (Language):  le modèle pour l'analyse avec spacy.
     """
-    import tokentype
 
     nlp = spacy.load("fr_core_news_sm")
     nlp.add_pipe("sent_on_newline", first=True)
