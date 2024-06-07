@@ -164,6 +164,30 @@ def get_binary_lookup(
     return lookup
 
 
+def make_multi_column_select(tablename, columns):
+    n_columns = len(columns)
+    placeholders = " ".join(["{}"] * n_columns)
+    query = "select id, {}".format(placeholders)
+    query += " from {}"
+    query = SQL(query).format(
+        *[Identifier(i) for i in columns] + [Identifier(tablename)]
+    )
+    return query
+
+
+def get_multicolumn_lookup(
+    conn, tablename, columns, lookup_type=Lookup
+):
+    query = make_multi_column_select(
+        tablename=tablename, columns=columns
+    )
+    cur = conn.cursor()
+    cur.execute(query)
+    d = {i[1:]: i[0] for i in cur.fetchall()}
+    lookup = lookup_type(keyname="multikey", d=d)
+    return lookup
+
+
 class ConceptLookup(Lookup):
     def __init__(self, conn, tablename, colname="nom", **kwargs):
         self.conn = conn
@@ -213,3 +237,11 @@ def get_lemma_lookup(conn):
 
 def get_key_spacy(d):
     return (d["lemma"], d["norm"], d["pos"], d["morph"])
+
+
+class MultiColumnLookup(ConceptLookup):
+    def __init__(self, columns, **kwargs):
+        super().__init__(**kwargs)
+        self.columns = columns
+
+    # def fetch(self)
