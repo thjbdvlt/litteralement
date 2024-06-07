@@ -3,37 +3,6 @@ import litteralement.seq
 from typing import NamedTuple
 
 
-def get_binary_lookup(conn, tablename, colname="nom"):
-    query = SQL("select id, {} from {}").format(
-        Identifier(colname), Identifier(tablename)
-    )
-    cur = conn.cursor()
-    cur.execute(query)
-    d = {i[1]: i[0] for i in cur.fetchall()}
-    lookup = Lookup(keyname=colname, d=d)
-    return lookup
-
-
-def get_pos_lookup(conn):
-    return get_binary_lookup(conn, "nature")
-
-
-def get_dep_lookup(conn):
-    return get_binary_lookup(conn, "fonction")
-
-
-def get_morph_lookup(conn):
-    return get_binary_lookup(conn, "morph", colname="feats")
-
-
-def get_lemma_lookup(conn):
-    return get_binary_lookup(conn, "lemme", colname="graphie")
-
-
-def get_key_spacy(d):
-    return (d["lemma"], d["norm"], d["pos"], d["morph"])
-
-
 class Lookup:
     """Lookup Table sous la forme {nom: id}, avec génération incrémentale d'id."""
 
@@ -176,3 +145,49 @@ class TryLookup(Lookup):
             return self.d[label]
         except KeyError:
             super().__getitem__(label)
+
+
+def get_binary_lookup(
+    conn, tablename, colname="nom", lookup_type=Lookup
+):
+    query = SQL("select id, {} from {}").format(
+        Identifier(colname), Identifier(tablename)
+    )
+    cur = conn.cursor()
+    cur.execute(query)
+    d = {i[1]: i[0] for i in cur.fetchall()}
+    lookup = lookup_type(keyname=colname, d=d)
+    return lookup
+
+
+def get_pos_lookup(conn):
+    return get_binary_lookup(
+        conn,
+        "nature",
+        lookup_type=TryLookup,
+    )
+
+
+def get_dep_lookup(conn):
+    return get_binary_lookup(
+        conn,
+        "fonction",
+        lookup_type=TryLookup,
+    )
+
+
+def get_morph_lookup(conn):
+    return get_binary_lookup(
+        conn,
+        "morph",
+        colname="feats",
+        lookup_type=TryLookup,
+    )
+
+
+def get_lemma_lookup(conn):
+    return get_binary_lookup(conn, "lemme", colname="graphie")
+
+
+def get_key_spacy(d):
+    return (d["lemma"], d["norm"], d["pos"], d["morph"])
