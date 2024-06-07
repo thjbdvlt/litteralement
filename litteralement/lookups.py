@@ -13,6 +13,7 @@ class Lookup:
             d (dict):  les données de départ {label: id}.
         """
 
+        self.keyname = keyname
         self.Item = NamedTuple("Item", [("id", int), (keyname, str)])
 
         if not d:
@@ -160,33 +161,44 @@ def get_binary_lookup(
     return lookup
 
 
+class ConceptLookup(Lookup):
+    def __init__(self, conn, tablename, colname='nom', **kwargs):
+        self.conn = conn
+        self.fetch()
+        super().__init__(**kwargs)
+
+    def fetch(self):
+        get_binary_lookup(
+            self.conn, tablename=self.tablename, colname=self.colname,
+        )
+
+
+class TryConceptLookup(TryLookup):
+    def __init__(self, conn, tablename, colname='nom', **kwargs):
+        self.conn = conn
+        self.fetch()
+        super().__init__(**kwargs)
+
+    def fetch(self):
+        get_binary_lookup(
+            self.conn, tablename=self.tablename, colname=self.colname,
+        )
+
+
 def get_pos_lookup(conn):
-    return get_binary_lookup(
-        conn,
-        "nature",
-        lookup_type=TryLookup,
-    )
+    return TryConceptLookup(conn, "nature")
 
 
 def get_dep_lookup(conn):
-    return get_binary_lookup(
-        conn,
-        "fonction",
-        lookup_type=TryLookup,
-    )
+    return TryConceptLookup(conn, "fonction")
 
 
 def get_morph_lookup(conn):
-    return get_binary_lookup(
-        conn,
-        "morph",
-        colname="feats",
-        lookup_type=TryLookup,
-    )
+    return TryConceptLookup(conn, "morph", colname="feats")
 
 
 def get_lemma_lookup(conn):
-    return get_binary_lookup(conn, "lemme", colname="graphie")
+    return ConceptLookup(conn, 'lemme', 'graphie')
 
 
 def get_key_spacy(d):
