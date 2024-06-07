@@ -1,7 +1,6 @@
 from psycopg.sql import SQL, Identifier
 import litteralement.seq
 from typing import NamedTuple
-import json
 
 
 class Lookup:
@@ -85,7 +84,10 @@ class Lookup:
             reverse (bool):  si il faut inverser la logique clé-valeur.
 
         Note:
-            Des valeurs ajoutés à l'aide de `add()` peuvent être non-unique. Elles sont enlevées pour ne pas effacer les valeurs initiales. (Et sont donc absente.)
+            Des valeurs ajoutés à l'aide de `add()` peuvent être non-unique. Elles sont enlevées pour ne pas effacer les valeurs initiales si le paramètre 'reverse' est True, pour éviter que
+                [{"REAL_KEY": 1, "alternate_key": 1}]
+            devienne
+                [{"alternate_key": 1}]
         """
 
         if reverse is False:
@@ -97,7 +99,7 @@ class Lookup:
             return x
 
     def __iter__(self):
-        """Itère sur les clés.
+        """Liste de dictionnaire.
 
         Returns (Generator)
         """
@@ -178,13 +180,14 @@ class ConceptLookup(Lookup):
         )
 
     def copy_to(self):
-        stmt = SQL("copy {} ({}) from stdin").format(
-            Identifier(self.tablename), Identifier.self.colname
+        stmt = SQL("copy {} (id, {}) from stdin").format(
+            Identifier(self.tablename), Identifier(self.colname)
         )
-        existing = set(self.fetch())
-        with self.conn.copy(stmt) as copy:
-            for i in set(self) - existing:
-                copy.write_row((json.dumps(i),))
+        existing = set(self.fetch().as_tuples())
+        cur = self.conn.cursor()
+        with cur.copy(stmt) as copy:
+            for i in set(self.as_tuples()) - existing:
+                copy.write_row((i))
 
 
 class TryConceptLookup(ConceptLookup, TryLookup):
