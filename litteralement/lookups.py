@@ -35,6 +35,14 @@ class Lookup:
         self._update_sequence()
 
     def __contains__(self, i):
+        """True si l'item est dans le Lookup.
+
+        Args:
+            i (Any):  l'item, qui doit seulement être hashable.
+
+        Returns (bool)
+        """
+
         return i in self.d
 
     def __setitem__(self, k, v):
@@ -66,16 +74,16 @@ class Lookup:
     def __dict__(self):
         return self.d
 
-    def __call__(self, label):
+    def __call__(self, i):
         """Cherche si l'item est là. Sinon, l'ajoute.
 
         Args:
-            label:  le label.
+            i (Any):  l'item (doit être hashable).
 
         Returns (int):  son id.
         """
 
-        return self.__getitem__(label)
+        return self.__getitem__(i)
 
     def to_dict(self, reverse=True):
         """Retourne un dictionnaire à partir de la lookup table.
@@ -110,8 +118,9 @@ class Lookup:
     def as_tuples(self):
         """Retourne les items du Lookup sous forme de tuple (id, nom).
 
-        Le paramètre 'new' conserve une liste des nouveaux élements.
+        Returns (Generator[NamedTuple])
         """
+
         Item = self.Item
         d = self.d
         for i in d:
@@ -144,16 +153,38 @@ class Lookup:
 class TryLookup(Lookup):
     """Lookup Table pour les fois où les clés sont peu nombreuses."""
 
-    def __getitem__(self, label):
+    def __getitem__(self, i):
+        """Méthode alternative: essayer de récupérer la clé.
+
+        Args:
+            i (Any):  le label.
+
+        Returns (int):  l'indentifiant.
+        """
+
         try:
-            return self.d[label]
+            return self.d[i]
         except KeyError:
-            super().__getitem__(label)
+            return super().__getitem__(i)
 
 
 def get_binary_lookup(
-    conn, tablename, colname="nom", lookup_type=Lookup
+    conn,
+    tablename,
+    colname="nom",
+    lookup_type=Lookup,
 ):
+    """Récupère une table lookup binaire (id/nom).
+
+    Args:
+        conn (Connection)
+        tablename (str)
+        colname (str)
+        lookup_type (Lookup, TryLookup)
+
+    Returns (Lookup, TryLookup)
+    """
+
     query = SQL("select id, {} from {}").format(
         Identifier(colname), Identifier(tablename)
     )
@@ -165,6 +196,15 @@ def get_binary_lookup(
 
 
 def make_multi_column_select(tablename, columns):
+    """Construit un statement SELECT qui récupère plusieurs colonnes.
+
+    Args:
+        tablename (str)
+        columns (list)
+
+    Returns (SQL)
+    """
+
     n_columns = len(columns)
     placeholders = " ".join(["{}"] * n_columns)
     query = "select id, {}".format(placeholders)
@@ -178,6 +218,17 @@ def make_multi_column_select(tablename, columns):
 def get_multicolumn_lookup(
     conn, tablename, columns, lookup_type=Lookup
 ):
+    """Récupère un Lookup multikey (plusieurs colonnes).
+
+    Args:
+        conn (Connection)
+        tablename (str)
+        columns (list[str])
+        lookup_type (Lookup)
+
+    Returns (Lookup)
+    """
+
     query = make_multi_column_select(
         tablename=tablename, columns=columns
     )
@@ -189,7 +240,18 @@ def get_multicolumn_lookup(
 
 
 class ConceptLookup(Lookup):
+    """Un Lookup pour les tables CONCEPT (classe, morphologie, ...)."""
+
     def __init__(self, conn, tablename, colname="nom", **kwargs):
+        """Instancie un ConceptLookup.
+
+        Args:
+            conn (Connection)
+            tablname (str)
+            colname (str)
+            **kwargs -> passés à Lookup.
+        """
+
         self.conn = conn
         self.tablename = tablename
         self.colname = colname
@@ -197,6 +259,11 @@ class ConceptLookup(Lookup):
         super().__init__(d=d, keyname=colname, **kwargs)
 
     def fetch(self):
+        """Récupère les données déjà présentes dans la table.
+
+        Returns (Lookup)
+        """
+
         return get_binary_lookup(
             self.conn,
             tablename=self.tablename,
@@ -204,6 +271,12 @@ class ConceptLookup(Lookup):
         )
 
     def copy_to(self):
+        """Insère dans la base de données les Items nouveaux.
+
+        Note:
+            COPY TO, car plus rapide que INSERT.
+        """
+
         stmt = SQL("copy {} (id, {}) from stdin").format(
             Identifier(self.tablename), Identifier(self.colname)
         )
@@ -215,23 +288,57 @@ class ConceptLookup(Lookup):
 
 
 class TryConceptLookup(ConceptLookup, TryLookup):
+    """Concept Lookup pour les Tables avec peu de valeurs."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
 def get_pos_lookup(conn):
+    """Construit un Lookup pour les part-of-speech.
+
+    Args:
+        conn (Connection)
+
+    Returns (TryConceptLookup)
+    """
+
     return TryConceptLookup(conn, "nature")
 
 
 def get_dep_lookup(conn):
+    """Construit un Lookup pour les dependency labels.
+
+    Args:
+        conn (Connection)
+
+    Returns (TryConceptLookup)
+    """
+
     return TryConceptLookup(conn, "fonction")
 
 
 def get_morph_lookup(conn):
+    """Construit un Lookup pour les morphologies (feats).
+
+    Args:
+        conn (Connection)
+
+    Returns (TryConceptLookup)
+    """
+
     return TryConceptLookup(conn, "morph", colname="feats")
 
 
 def get_lemma_lookup(conn):
+    """Construit un Lookup pour les lemmes.
+
+    Args:
+        conn (Connection)
+
+    Returns (ConceptLookup)
+    """
+
     return ConceptLookup(conn, "lemme", "graphie")
 
 
