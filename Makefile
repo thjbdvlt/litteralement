@@ -1,6 +1,10 @@
 _py=$(CURDIR)/venv/bin/python3
 _pip=$(CURDIR)/venv/bin/pip3
 
+all:
+	make .gitignore
+	make installer
+
 venv:
 	python -3 venv venv
 
