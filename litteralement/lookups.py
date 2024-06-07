@@ -1,6 +1,7 @@
 from psycopg.sql import SQL, Identifier
-import litteralement.seq
 from typing import NamedTuple
+import litteralement.seq
+import litteralement.util
 
 
 class Lookup:
@@ -194,26 +195,6 @@ def get_binary_lookup(
     return lookup
 
 
-def make_multi_column_select(tablename, columns):
-    """Construit un statement SELECT qui récupère plusieurs colonnes.
-
-    Args:
-        tablename (str)
-        columns (list)
-
-    Returns (SQL)
-    """
-
-    n_columns = len(columns)
-    placeholders = " ".join(["{}"] * n_columns)
-    query = "select id, {}".format(placeholders)
-    query += " from {}"
-    query = SQL(query).format(
-        *[Identifier(i) for i in columns] + [Identifier(tablename)]
-    )
-    return query
-
-
 def get_multicolumn_lookup(
     conn, tablename, columns, lookup_type=Lookup
 ):
@@ -228,7 +209,7 @@ def get_multicolumn_lookup(
     Returns (Lookup)
     """
 
-    query = make_multi_column_select(
+    query = litteralement.util.make_multi_column_select(
         tablename=tablename, columns=columns
     )
     cur = conn.cursor()
@@ -276,15 +257,19 @@ class ConceptLookup(Lookup):
             COPY TO, car plus rapide que INSERT.
         """
 
-        stmt = SQL("copy {} (id, {}) from stdin").format(
-            Identifier(self.tablename), Identifier(self.colname)
-        )
         existing = set(self.fetch().as_tuples())
         cur = self.conn.cursor()
-        with cur.copy(stmt) as copy:
+        with cur.copy(self._copy_stmt) as copy:
             for i in set(self.as_tuples()) - existing:
                 # copy.write_row((i))
                 copy.write_row(i)
+
+    @property
+    def _copy_stmt(self):
+        stmt = SQL("copy {} (id, {}) from stdin").format(
+            Identifier(self.tablename), Identifier(self.colname)
+        )
+        return stmt
 
 
 class TryConceptLookup(ConceptLookup, TryLookup):
@@ -342,10 +327,6 @@ def get_lemma_lookup(conn):
     return ConceptLookup(conn, "lemme", "graphie")
 
 
-def get_lex_key_from_spacy(d):
-    return (d["lemma"], d["norm"], d["pos"], d["morph"])
-
-
 class MultiColumnLookup(ConceptLookup):
     def __init__(self, columns, **kwargs):
         super().__init__(**kwargs)
@@ -362,3 +343,10 @@ class MultiColumnLookup(ConceptLookup):
             tablename=self.tablename,
             columns=self.columns,
         )
+
+    @property
+    def _copy_stmt(self):
+        stmt = SQL("copy {} (id, {}) from stdin").format(
+            Identifier(self.tablename), Identifier(self.colname)
+        )
+        return stmt
