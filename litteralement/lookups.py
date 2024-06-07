@@ -1,5 +1,6 @@
 from psycopg.sql import SQL, Identifier
 from typing import NamedTuple
+from typing import Any
 import litteralement.seq
 import litteralement.util
 
@@ -261,7 +262,6 @@ class ConceptLookup(Lookup):
         cur = self.conn.cursor()
         with cur.copy(self._copy_stmt) as copy:
             for i in set(self.as_tuples()) - existing:
-                # copy.write_row((i))
                 copy.write_row(i)
 
     @property
@@ -277,6 +277,41 @@ class TryConceptLookup(ConceptLookup, TryLookup):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+class MultiColumnLookup(ConceptLookup):
+    def __init__(self, conn, tablename, columns, **kwargs):
+        self.columns = columns
+        super().__init__(conn=conn, tablename=tablename, **kwargs)
+        non_id_fields = [(i, Any) for i in columns]
+        fields = [("id", int)] + non_id_fields
+        self.Item = NamedTuple("Item", fields)
+        self.Key = NamedTuple("Key", non_id_fields)
+
+    def get_key(self, d):
+        return 
+
+    def fetch(self):
+        """Récupère les données déjà présentes dans la table.
+
+        Returns (Lookup)
+        """
+
+        return get_multicolumn_lookup(
+            self.conn,
+            tablename=self.tablename,
+            columns=self.columns,
+        )
+
+    @property
+    def _copy_stmt(self):
+        stmt = litteralement.util.make_multi_column_select(self.tablename, self.columns)
+        return stmt
+
+    def as_tuples(self):
+        Item = self.Item
+        for k in self.d:
+            yield Item(**k._asdict)
 
 
 def get_pos_lookup(conn):
@@ -327,26 +362,7 @@ def get_lemma_lookup(conn):
     return ConceptLookup(conn, "lemme", "graphie")
 
 
-class MultiColumnLookup(ConceptLookup):
-    def __init__(self, columns, **kwargs):
-        super().__init__(**kwargs)
-        self.columns = columns
-
-    def fetch(self):
-        """Récupère les données déjà présentes dans la table.
-
-        Returns (Lookup)
-        """
-
-        return get_multicolumn_lookup(
-            self.conn,
-            tablename=self.tablename,
-            columns=self.columns,
-        )
-
-    @property
-    def _copy_stmt(self):
-        stmt = SQL("copy {} (id, {}) from stdin").format(
-            Identifier(self.tablename), Identifier(self.colname)
-        )
-        return stmt
+def get_lexeme_lookup(conn):
+    return MultiColumnLookup(
+        conn, "lexeme", ["lemme", "norme", "nature", "morph"]
+    )

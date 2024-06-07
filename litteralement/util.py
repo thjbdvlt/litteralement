@@ -12,7 +12,7 @@ def make_multi_column_select(tablename, columns):
     """
 
     n_columns = len(columns)
-    placeholders = " ".join(["{}"] * n_columns)
+    placeholders = ", ".join(["{}"] * n_columns)
     query = "select id, {}".format(placeholders)
     query += " from {}"
     query = SQL(query).format(
