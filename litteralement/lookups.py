@@ -288,9 +288,6 @@ class MultiColumnLookup(ConceptLookup):
         self.Item = NamedTuple("Item", fields)
         self.Key = NamedTuple("Key", non_id_fields)
 
-    def get_key(self, d):
-        return 
-
     def fetch(self):
         """Récupère les données déjà présentes dans la table.
 
@@ -305,13 +302,16 @@ class MultiColumnLookup(ConceptLookup):
 
     @property
     def _copy_stmt(self):
-        stmt = litteralement.util.make_multi_column_select(self.tablename, self.columns)
+        stmt = litteralement.util.make_multi_column_select(
+            self.tablename, self.columns
+        )
         return stmt
 
     def as_tuples(self):
         Item = self.Item
+        d = self.d
         for k in self.d:
-            yield Item(**k._asdict)
+            yield Item(id=d[k], **k._asdict())
 
 
 def get_pos_lookup(conn):

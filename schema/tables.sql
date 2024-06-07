@@ -115,6 +115,3 @@ create table import._document(
     id int,
     j jsonb
 );
-create table import._lexeme(
-    j jsonb
-);
