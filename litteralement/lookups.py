@@ -86,6 +86,15 @@ class Lookup:
 
         return self.__getitem__(i)
 
+    def __iter__(self):
+        """Liste de dictionnaire.
+
+        Returns (Generator)
+        """
+
+        for i in self.d:
+            yield {"id": self.d[i], self.keyname: i}
+
     def to_dict(self, reverse=True):
         """Retourne un dictionnaire à partir de la lookup table.
 
@@ -106,15 +115,6 @@ class Lookup:
             for i in set(self.d.keys()) - self.ersatz:
                 x[self[i]] = i
             return x
-
-    def __iter__(self):
-        """Liste de dictionnaire.
-
-        Returns (Generator)
-        """
-
-        for i in self.d:
-            yield {"id": self.d[i], self.keyname: i}
 
     def as_tuples(self):
         """Retourne les items du Lookup sous forme de tuple (id, nom).
@@ -310,11 +310,8 @@ class MultiColumnLookup(ConceptLookup):
     def as_tuples(self):
         Item = self.Item
         d = self.d
-        # columns = self.columns
         for k in self.d:
-            # yield Item(id=d[k], **k._asdict())
-            yield Item(id=d[k], *k)
-            # yield Item(id=d[k], *[getattr(self, i) for i in columns])
+            yield Item(id=d[k], **k._asdict())
 
 
 def get_pos_lookup(conn):
