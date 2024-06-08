@@ -1,6 +1,6 @@
 import tqdm
 import json
-from litteralement.lang.fr import todict_fr
+from litteralement.lang.fr import todict
 
 
 def annoter(
@@ -43,7 +43,7 @@ def annoter(
     # construire des dicts
     docs = map(
         lambda i: (
-            todict_fr(i[0], isword=isword, **kwargs),
+            todict(i[0], isword=isword, **kwargs),
             i[1]["id"],
         ),
         docs,

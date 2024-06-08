@@ -30,7 +30,7 @@ def translate_keys(d, table=ENG_TO_FRENCH):
     return {table[k]: d[k] for k in d}
 
 
-def todict_fr(
+def todict(
     doc,
     isword=lambda token: any((char.isalpha() for char in token.text))
     and not any((token.like_url, token.like_email)),

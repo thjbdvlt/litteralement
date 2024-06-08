@@ -363,6 +363,8 @@ def get_lemma_lookup(conn):
 
 
 def get_lexeme_lookup(conn):
+    """Construit un lexème."""
+
     return MultiColumnLookup(
         conn, "lexeme", ["lemme", "norme", "nature", "morph"]
     )
