@@ -1,14 +1,9 @@
-import json
 import tqdm
+import json
 from psycopg.sql import SQL
 import psycopg
 from litteralement.lang.fr import todict
 from litteralement.statements import copy_to_multicolumns
-from litteralement.lookups import get_lemma_lookup
-from litteralement.lookups import get_pos_lookup
-from litteralement.lookups import get_dep_lookup
-from litteralement.lookups import get_morph_lookup
-from litteralement.lookups import get_lexeme_lookup
 
 
 def annoter(
