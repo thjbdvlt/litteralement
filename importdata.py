@@ -1,22 +1,31 @@
 import psycopg
-from litteralement.database_lookups import TryConceptLookup
+from litteralement.lookups.database import TryDatabaseLookup
 from litteralement.lookups import Lookup
+
+
+class ImportLookup:
+    def __init__(self, **kwargs):
+        self.tablename = "import._lookup_entite"
+        super().__init__(**kwargs)
+
+    def fetch(self):
+        query = "select dataset, id_dataset, id_entite from "
+        cur = self.conn.cursor()
+        for row in cur.execute(query):
+            yield row
+
 
 dbname = "litteralement"
 conn = psycopg.connect(dbname=dbname)
 
 conn.execute("create temp table _temp_data (j json)")
 
-lookup_classe = TryConceptLookup(conn, "classe")
-lookup_type_relation = TryConceptLookup(conn, "type_relation")
-lookup_type_propriete = TryConceptLookup(conn, "type_propriete")
+lookup_classe = TryDatabaseLookup(conn, "classe")
+lookup_type_relation = TryDatabaseLookup(conn, "type_relation")
+lookup_type_propriete = TryDatabaseLookup(conn, "type_propriete")
 
 lookup_entites_dataset = ""
 
-
-class ImportLookup(Lookup):
-    def __init__(self):
-        pass
 
 # importation EAV
 # importer les données dans les tables entités, classes, types de proprités/relations, relations, propriétés.

@@ -1,8 +1,3 @@
-from litteralement.lookups import ConceptLookup
-from litteralement.lookups import TryConceptLookup
-from litteralement.lookups import MultiColumnLookup
-
-
 def todict(
     doc,
     isword=lambda token: any((char.isalpha() for char in token.text))
@@ -74,57 +69,3 @@ def todict(
     result.update(add_doc_attrs(doc))
 
     return result
-
-
-def get_pos_lookup_en(conn):
-    """Construit un Lookup pour les part-of-speech.
-
-    Args:
-        conn (Connection)
-
-    Returns (TryConceptLookup)
-    """
-
-    return TryConceptLookup(conn, "pos")
-
-
-def get_dep_lookup_en(conn):
-    """Construit un Lookup pour les dependency labels.
-
-    Args:
-        conn (Connection)
-
-    Returns (TryConceptLookup)
-    """
-
-    return TryConceptLookup(conn, "dep")
-
-
-def get_morph_lookup_en(conn):
-    """Construit un Lookup pour les morphologies (feats).
-
-    Args:
-        conn (Connection)
-
-    Returns (TryConceptLookup)
-    """
-
-    return TryConceptLookup(conn, "morph", colname="feats")
-
-
-def get_lemma_lookup_en(conn):
-    """Construit un Lookup pour les lemmes.
-
-    Args:
-        conn (Connection)
-
-    Returns (ConceptLookup)
-    """
-
-    return ConceptLookup(conn, "lemma", "text")
-
-
-def get_lexeme_lookup_en(conn):
-    return MultiColumnLookup(
-        conn, "lex", ["lemma", "norm", "pos", "morph"]
-    )

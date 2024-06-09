@@ -122,6 +122,6 @@ create table import._document(
 
 create table import._lookup_entite(
     dataset smallint,
-    id_import int,
-    id_db int
+    id_dataset int,
+    id_entite int
 );

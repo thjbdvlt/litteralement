@@ -1,11 +1,11 @@
-from typing import NamedTuple
+from typing import NamedTuple, Any
 import litteralement.seq
 
 
 class Lookup:
     """Lookup Table sous la forme {nom: id}, avec génération incrémentale d'id."""
 
-    def __init__(self, keyname="nom", d=None):
+    def __init__(self, keyname="nom", d=None, keyid="id"):
         """Instancie une table lookup simple: {label: id}.
 
         Args:
@@ -13,12 +13,13 @@ class Lookup:
         """
 
         self.keyname = keyname
-        self.Item = NamedTuple("Item", [("id", int), (keyname, str)])
+        self.keyid = keyid
+        self.Item = NamedTuple("Item", [(keyid, int), (keyname, str)])
 
         if not d:
             d = {}
         elif not isinstance(d, dict):
-            d = {i[self.keyname]: i["id"] for i in d}
+            d = {i[self.keyname]: i[keyid] for i in d}
 
         for i in d.values():
             if not isinstance(i, int):
@@ -89,8 +90,9 @@ class Lookup:
         Returns (Generator)
         """
 
+        keyid = self.keyid
         for i in self.d:
-            yield {"id": self.d[i], self.keyname: i}
+            yield {keyid: self.d[i], self.keyname: i}
 
     def to_dict(self, reverse=True):
         """Retourne un dictionnaire à partir de la lookup table.
@@ -164,3 +166,22 @@ class TryLookup(Lookup):
             return self.d[i]
         except KeyError:
             return super().__getitem__(i)
+
+
+class ComposedKeyLookup(Lookup):
+    def __init__(
+        self, fields, d=None, keyid="id", keyname="COMPOSED_KEY"
+    ):
+        super().__init__(keyname=keyname, d=d, keyid=keyid)
+        self.fields = fields
+        tuple_fields = [(i, Any) for i in fields]
+        self.Key = NamedTuple("Key", tuple_fields)
+        self.Item = NamedTuple(
+            "Item", [(self.keyid, int)] + tuple_fields
+        )
+
+    def as_tuples(self):
+        Item = self.Item
+        d = self.d
+        for i in d:
+            yield Item(*((d[i],) + i))

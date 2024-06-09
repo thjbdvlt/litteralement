@@ -1,7 +1,8 @@
 from psycopg.sql import SQL, Identifier
-from typing import Any
-from litteralement.lookups import Lookup
-from litteralement.lookups import TryLookup
+from typing import Any, NamedTuple
+from litteralement.lookups.core import Lookup
+from litteralement.lookups.core import TryLookup
+from litteralement.lookups.core import ComposedKeyLookup
 import litteralement.statements
 
 
@@ -9,21 +10,23 @@ def get_binary_lookup(
     conn,
     tablename,
     colname="nom",
+    colid="id",
     lookup_type=Lookup,
 ):
-    """Récupère une table lookup binaire (id/nom).
+    """Récupère une table lookup binaire (typiquement: id/nom).
 
     Args:
         conn (Connection)
         tablename (str)
-        colname (str)
+        colname (str):  la colonne qui fait office de nom.
+        colid (str):  la colonne qui fait office d'id.
         lookup_type (Lookup, TryLookup)
 
     Returns (Lookup, TryLookup)
     """
 
-    query = SQL("select id, {} from {}").format(
-        Identifier(colname), Identifier(tablename)
+    query = SQL("select {}, {} from {}").format(
+        Identifier(colid), Identifier(colname), Identifier(tablename)
     )
     cur = conn.cursor()
     cur.execute(query)
@@ -33,9 +36,14 @@ def get_binary_lookup(
 
 
 def get_multicolumn_lookup(
-    conn, tablename, columns, lookup_type=Lookup
+    conn,
+    tablename,
+    columns,
+    lookup_type=Lookup,
+    keyname="COMPOSED_KEY",
+    **kwargs,
 ):
-    """Récupère un Lookup multikey (plusieurs colonnes).
+    """Récupère un Lookup COMPOSED_KEY (plusieurs colonnes).
 
     Args:
         conn (Connection)
@@ -52,15 +60,17 @@ def get_multicolumn_lookup(
     cur = conn.cursor()
     cur.execute(query)
     d = {i[1:]: i[0] for i in cur.fetchall()}
-    lookup = lookup_type(keyname="multikey", d=d)
+    lookup = lookup_type(keyname="COMPOSED_KEY", d=d, **kwargs)
     return lookup
 
 
-class ConceptLookup(Lookup):
-    """Un Lookup pour les tables CONCEPT (classe, morphologie, ...)."""
+class DatabaseLookup(Lookup):
+    """Un Lookup pour les tables ."""
 
-    def __init__(self, conn, tablename, colname="nom", **kwargs):
-        """Instancie un ConceptLookup.
+    def __init__(
+        self, conn, tablename, colname="nom", colid="id", **kwargs
+    ):
+        """Instancie un DatabaseLookup.
 
         Args:
             conn (Connection)
@@ -72,6 +82,8 @@ class ConceptLookup(Lookup):
         self.conn = conn
         self.tablename = tablename
         self.colname = colname
+        self.keyname = colname
+        self.colid = colid
         d = self.fetch()
         super().__init__(d=d, keyname=colname, **kwargs)
 
@@ -84,7 +96,9 @@ class ConceptLookup(Lookup):
         return get_binary_lookup(
             self.conn,
             tablename=self.tablename,
+            colid=self.colid,
             colname=self.colname,
+            lookup_type=Lookup,
         )
 
     def copy_to(self):
@@ -102,27 +116,65 @@ class ConceptLookup(Lookup):
 
     @property
     def _copy_stmt(self):
+        """Construit un statement COPY."""
+
         stmt = SQL("copy {} (id, {}) from stdin").format(
             Identifier(self.tablename), Identifier(self.colname)
         )
         return stmt
 
 
-class TryConceptLookup(ConceptLookup, TryLookup):
-    """Concept Lookup pour les Tables avec peu de valeurs."""
+class TryDatabaseLookup(DatabaseLookup, TryLookup):
+    """DatabaseLookup pour les Tables avec peu de valeurs."""
 
     def __init__(self, *args, **kwargs):
+        """Instancie un TryDatabaseLookup."""
         super().__init__(*args, **kwargs)
 
+    def fetch(self):
+        """Récupère les données déjà présentes dans la table.
 
-class MultiColumnLookup(ConceptLookup):
-    def __init__(self, conn, tablename, columns, **kwargs):
+        Returns (Lookup)
+        """
+
+        return get_binary_lookup(
+            self.conn,
+            tablename=self.tablename,
+            colid=self.colid,
+            colname=self.colname,
+            lookup_type=TryLookup,
+        )
+
+
+class MultiColumnLookup(ComposedKeyLookup):
+    copy_to = DatabaseLookup.copy_to
+
+    def __init__(self, conn, tablename, columns, colid="id", **kwargs):
+        """Instancie un MultiColumnLookup.
+
+        Args:
+            conn (Connection)
+            tablename (str)
+            columns (list[str])
+            colid (str)
+            **kwargs
+        """
+
+        _name = "COMPOSED_KEY"
+        self.conn = conn
+        self.tablename = tablename
+        self.colname = _name
+        self.keyname = _name
+        self.colid = colid
+
         self.columns = columns
-        super().__init__(conn=conn, tablename=tablename, **kwargs)
-        non_id_fields = [(i, Any) for i in columns]
-        fields = [("id", int)] + non_id_fields
-        self.Item = NamedTuple("Item", fields)
-        self.Key = NamedTuple("Key", non_id_fields)
+        fields = [(i, Any) for i in columns]
+        self.Key = NamedTuple("Key", fields)
+        self.Row = NamedTuple("Row", [("id", int)] + fields)
+        d = self.fetch()
+        super().__init__(
+            fields=columns, keyname=_name, d=d, keyid=colid
+        )
 
     def fetch(self):
         """Récupère les données déjà présentes dans la table.
@@ -133,18 +185,12 @@ class MultiColumnLookup(ConceptLookup):
         return get_multicolumn_lookup(
             self.conn,
             tablename=self.tablename,
-            columns=self.columns,
+            columns=[self.colid] + self.columns,
         )
 
     @property
     def _copy_stmt(self):
         stmt = litteralement.statements.copy_to_multicolumns(
-            self.tablename, ["id"] + self.columns
+            self.tablename, [self.colid] + self.columns
         )
         return stmt
-
-    def as_tuples(self):
-        Item = self.Item
-        d = self.d
-        for k in self.d:
-            yield Item(id=d[k], **k._asdict())
