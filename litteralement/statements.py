@@ -1,30 +1,37 @@
-SELECT_LEXEMES = """select
-    x.id,
-    l.graphie as lemma,
-    x.norme,
-    n.nom as pos,
-    m.feats as morph
-from lexeme x
-join lemme l on l.id = x.lemme
-join nature n on n.id = x.nature
-join morph m on m.id = x.morph;"""
+from psycopg.sql import SQL, Identifier
 
-SELECT_LEMMES = """select
-    id,
-    graphie
-from lemme;"""
 
-SELECT_POS = """select
-    id,
-    nom
-from nature;"""
+def make_multi_column_select(tablename, columns):
+    """Construit un statement SELECT qui récupère plusieurs colonnes.
 
-SELECT_DEP = """select
-    id,
-    nom
-from fonction;"""
+    Args:
+        tablename (str)
+        columns (list)
 
-SELECT_MORPH = """select
-    id,
-    feats
-from morph;"""
+    Returns (SQL)
+    """
+
+    sql_select = SQL("select ")
+    sql_columns = SQL(", ").join([Identifier(i) for i in columns])
+    sql_table = SQL("from {}").format(Identifier(tablename))
+    query = sql_select + sql_columns + sql_table
+    return query
+
+
+def copy_to_multicolumns(table, columns):
+    """Construit un statement COPY TO avec plusieurs colonnes.
+
+    Args:
+        tablename (str)
+        columns (list)
+
+    Returns (SQL)
+    """
+
+    sql_copy = SQL("copy")
+    sql_table = Identifier(table)
+    sql_columns = SQL(", ").join([Identifier(i) for i in columns])
+    sql_columns = SQL("(") + sql_columns + SQL(")")
+    sql_stdin = SQL("from stdin")
+    query = sql_copy + sql_table + sql_columns + sql_stdin
+    return query

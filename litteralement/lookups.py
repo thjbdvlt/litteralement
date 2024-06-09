@@ -2,7 +2,7 @@ from psycopg.sql import SQL, Identifier
 from typing import NamedTuple
 from typing import Any
 import litteralement.seq
-import litteralement.util
+import litteralement.statements
 
 
 class Lookup:
@@ -210,7 +210,7 @@ def get_multicolumn_lookup(
     Returns (Lookup)
     """
 
-    query = litteralement.util.make_multi_column_select(
+    query = litteralement.statements.make_multi_column_select(
         tablename=tablename, columns=columns
     )
     cur = conn.cursor()
@@ -302,8 +302,8 @@ class MultiColumnLookup(ConceptLookup):
 
     @property
     def _copy_stmt(self):
-        stmt = litteralement.util.make_multi_column_select(
-            self.tablename, self.columns
+        stmt = litteralement.statements.copy_to_multicolumns(
+            self.tablename, ["id"] + self.columns
         )
         return stmt
 
