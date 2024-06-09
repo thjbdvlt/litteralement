@@ -28,10 +28,9 @@ def copy_to_multicolumns(table, columns):
     Returns (SQL)
     """
 
-    sql_copy = SQL("copy")
     sql_table = Identifier(table)
     sql_columns = SQL(", ").join([Identifier(i) for i in columns])
-    sql_columns = SQL("(") + sql_columns + SQL(")")
-    sql_stdin = SQL("from stdin")
-    query = sql_copy + sql_table + sql_columns + sql_stdin
+    query = SQL("copy {} ({}) from stdin").format(
+        sql_table, sql_columns
+    )
     return query
