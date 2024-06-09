@@ -2,11 +2,9 @@ import json
 import psycopg
 from psycopg.sql import SQL
 from litteralement.statements import copy_to_multicolumns
-from litteralement.lookups import get_lemma_lookup
-from litteralement.lookups import get_pos_lookup
-from litteralement.lookups import get_dep_lookup
-from litteralement.lookups import get_morph_lookup
-from litteralement.lookups import get_lexeme_lookup
+from litteralement.database_lookups import ConceptLookup
+from litteralement.database_lookups import TryConceptLookup
+from litteralement.database_lookups import MultiColumnLookup
 
 
 def _copy_from_temp(conn, table, key, columns):
@@ -79,11 +77,13 @@ def insert(dbname="litteralement"):
     conn = psycopg.connect(dbname=dbname)
 
     # créer des tables lookups pour les ids.
-    lookup_lemma = get_lemma_lookup(conn)
-    lookup_pos = get_pos_lookup(conn)
-    lookup_dep = get_dep_lookup(conn)
-    lookup_morph = get_morph_lookup(conn)
-    lookup_lex = get_lexeme_lookup(conn)
+    lookup_lemma = ConceptLookup(conn, "lemme", "graphie")
+    lookup_pos = TryConceptLookup(conn, "nature")
+    lookup_dep = TryConceptLookup(conn, "fonction")
+    lookup_morph = TryConceptLookup(conn, "morph", colname="feats")
+    lookup_lex = MultiColumnLookup(
+        conn, "lexeme", ["lemme", "norme", "nature", "morph"]
+    )
 
     # créer une table temporaire à partir de laquelle exécuter les 'copy', et dans laquelle va aller les mots, tokens, ..., avec les IDs pour remplacer les textes (des POS, DEP, MORPH, etc.).
     conn.execute("create temp table _temp_doc (id int, j jsonb);")
