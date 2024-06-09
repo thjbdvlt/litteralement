@@ -47,7 +47,7 @@ def _copy_from_temp(conn, table, key, columns):
 def _copy_mot(conn):
     """Ajoute les mots dans la base de données."""
 
-    table = "mot"
+    table = "nlp.mot"
     key = "mots"
     columns = ["debut", "fin", "num", "noyau", "lexeme", "fonction"]
     _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
@@ -56,7 +56,7 @@ def _copy_mot(conn):
 def _copy_token(conn):
     """Ajoute les tokens dans la base de données."""
 
-    table = "token"
+    table = "nlp.token"
     key = "nonmots"
     columns = ["debut", "fin", "num"]
     _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
@@ -65,7 +65,7 @@ def _copy_token(conn):
 def _copy_phrase(conn):
     """Ajoute les phrases dans la base de données."""
 
-    table = "phrase"
+    table = "nlp.phrase"
     key = "phrases"
     columns = ["debut", "fin"]
     _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
@@ -78,17 +78,13 @@ def insert(dbname="litteralement"):
     conn = psycopg.connect(dbname=dbname)
 
     # créer des tables lookups pour les ids.
-    lookup_lemma = DatabaseLookup(
-        conn, "nlp", "lemme", colname="graphie"
-    )
-    lookup_pos = TryDatabaseLookup(conn, "nlp", "nature")
-    lookup_dep = TryDatabaseLookup(conn, "nlp", "fonction")
-    lookup_morph = TryDatabaseLookup(
-        conn, "nlp", "morph", colname="feats"
-    )
+    lookup_lemma = DatabaseLookup(conn, "nlp.lemme", colname="graphie")
+    lookup_pos = TryDatabaseLookup(conn, "nlp.nature")
+    lookup_dep = TryDatabaseLookup(conn, "nlp.fonction")
+    lookup_morph = TryDatabaseLookup(conn, "nlp.morph", colname="feats")
     lookup_lex = MultiColumnLookup(
         conn=conn,
-        table=["nlp", "lexeme"],
+        table="nlp.lexeme",
         colid="id",
         columns=["lemme", "norme", "nature", "morph"],
     )

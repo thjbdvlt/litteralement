@@ -125,7 +125,8 @@ class DatabaseLookup(Lookup):
         """Construit un statement COPY."""
 
         stmt = SQL("copy {} (id, {}) from stdin").format(
-            Identifier(self.table), Identifier(self.colname)
+            litteralement.statements.qualify(self.table),
+            Identifier(self.colname),
         )
         return stmt
 

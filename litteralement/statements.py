@@ -2,11 +2,14 @@ from psycopg.sql import SQL, Identifier
 
 
 def qualify(table):
-    return (
-        Identifier(table)
-        if isinstance(table, str)
-        else Identifier(*table)
-    )
+    """Nom de table et schéma si inclut."""
+
+    if not isinstance(table, str):
+        return Identifier(*table)
+    elif "." in table:
+        return Identifier(*(table.split(".")))
+    else:
+        return Identifier(table)
 
 
 def make_multi_column_select(table, columns):
