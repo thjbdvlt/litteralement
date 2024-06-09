@@ -1,73 +1,12 @@
 import json
-import tqdm
-from psycopg.sql import SQL
 import psycopg
-from litteralement.lang.fr import todict
+from psycopg.sql import SQL
 from litteralement.statements import copy_to_multicolumns
 from litteralement.lookups import get_lemma_lookup
 from litteralement.lookups import get_pos_lookup
 from litteralement.lookups import get_dep_lookup
 from litteralement.lookups import get_morph_lookup
 from litteralement.lookups import get_lexeme_lookup
-
-
-def annoter(
-    conn,
-    query,
-    nlp,
-    batch_size=1000,
-    n_process=2,
-    isword=lambda token: token._.tokentype == "word",
-    **kwargs,
-):
-    """Annoter des textes et les insérer dans la base de données.
-
-    Args:
-        conn (Connection)
-        query (str):  SQL select qui doit retourner (id=int, val=text)
-        nlp (Language)
-
-    Optionnel:
-        batch_size (int)
-        n_process (int)
-    """
-
-    # deux curseurs: il faut pouvoir envoyer tout en continuant de recevoir
-    cur_get = conn.cursor()
-    cur_send = conn.cursor()
-
-    # lance la requête qui SELECT les textes.
-    cur_get.execute(query)
-
-    # crée des tuples pour process avec spacy en conservant les métadonnées.
-    texts = ((record[1], {"id": record[0]}) for record in cur_get)
-    docs = nlp.pipe(
-        texts=texts,
-        as_tuples=True,
-        batch_size=batch_size,
-        n_process=n_process,
-    )
-
-    # construire des dicts
-    docs = map(
-        lambda i: (
-            todict(i[0], isword=isword, **kwargs),
-            i[1]["id"],
-        ),
-        docs,
-    )
-
-    # sérialiser en JSON
-    todb = map(lambda i: (json.dumps(i[0]), i[1]), docs)
-
-    # placer les documents dans la table import._document (la méthode 'COPY' est beaucoup plus rapide qu'une insertion normale).
-    with cur_send.copy(
-        "COPY import._document (j, id) FROM STDIN"
-    ) as copy:
-        for i in tqdm.tqdm(todb):
-            copy.write_row(i)
-
-    conn.commit()
 
 
 def copy_to_from_temp(conn, table, key, columns):
@@ -80,19 +19,28 @@ def copy_to_from_temp(conn, table, key, columns):
         columns (list[str]):  la liste de colonnes (et clés d'éléments.)
     """
 
+    # deux curseurs: un pour recevoir, l'autre pour envoyer (en même temps).
     cur_get = conn.cursor()
     cur_send = conn.cursor()
+
+    # la requête pour prendre depuis les docs (table temporaires).
     sql_get = SQL("select id, j from _temp_doc")
-    # okeee fonctionne pas..
+
+    # construire la requête pour envoyer avec colonnes multiples.
     sql_copy_send = copy_to_multicolumns(
         table=table, columns=["texte"] + columns
     )
+
+    # récupérer les docs.
     docs = cur_get.execute(sql_get)
+
+    # copier les éléments dans la table.
     with cur_send.copy(sql_copy_send) as copy:
         for i in docs:
-            textid = i[0]
-            doc = i[1]
+            textid = i[0]  # l'id du texte, commun à mot/token/phrase
+            doc = i[1]  # le doc
             for x in doc[key]:
+                # construire des tuples, et les ajouter à l'id du texte.
                 row = tuple((x[c] for c in columns))
                 copy.write_row((textid,) + row)
 
@@ -124,16 +72,23 @@ def copy_to_phrase(conn):
     copy_to_from_temp(conn=conn, table=table, key=key, columns=columns)
 
 
-def insert():
-    conn = psycopg.connect(dbname="litteralement")
+def insert(dbname="litteralement"):
+    """Ajoute les import._documents dans les tables."""
 
+    # connection
+    conn = psycopg.connect(dbname=dbname)
+
+    # créer des tables lookups pour les ids.
     lookup_lemma = get_lemma_lookup(conn)
     lookup_pos = get_pos_lookup(conn)
     lookup_dep = get_dep_lookup(conn)
     lookup_morph = get_morph_lookup(conn)
     lookup_lex = get_lexeme_lookup(conn)
 
+    # créer une table temporaire à partir de laquelle exécuter les 'copy', et dans laquelle va aller les mots, tokens, ..., avec les IDs pour remplacer les textes (des POS, DEP, MORPH, etc.).
     conn.execute("create temp table _temp_doc (id int, j jsonb);")
+
+    # deux curseurs: un pour envoyer les données, l'autre pour recevoir: je fais ça en même temps (avec des Generator).
     cur_get = conn.cursor()
     cur_send = conn.cursor()
 
@@ -178,6 +133,8 @@ def insert():
         return word
 
     def numerize_doc():
+        """Numerize les composants des docs."""
+
         docs = cur_get.execute(
             "select id, j from import._document limit 1000;"
         )
@@ -195,17 +152,23 @@ def insert():
                     )
                 )
 
+    # numériser les docs
     numerize_doc()
 
+    # ajouter les morphologie, nature, fonctions, lemmes, dans les tables respectives.
     lookup_morph.copy_to()
     lookup_pos.copy_to()
     lookup_dep.copy_to()
     lookup_lemma.copy_to()
+
+    # l'ordre est important: la table 'lexeme' dépend de 'morph', 'pos', 'lemma'. et la table 'mot' dépend de 'dep'.
     lookup_lex.copy_to()
 
+    # copier les mots, tokens, phrases dans les tables respectives
     copy_to_mot(conn)
     copy_to_token(conn)
     copy_to_phrase(conn)
 
+    # commit et clore la connection: fin de la fonction.
     conn.commit()
     conn.close()
