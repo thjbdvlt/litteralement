@@ -1,5 +1,4 @@
 from psycopg.sql import SQL, Identifier
-from typing import Any, NamedTuple
 from litteralement.lookups.core import Lookup
 from litteralement.lookups.core import TryLookup
 from litteralement.lookups.core import ComposedKeyLookup
@@ -39,7 +38,7 @@ def get_multicolumn_lookup(
     conn,
     tablename,
     columns,
-    lookup_type=Lookup,
+    colid,
     keyname="COMPOSED_KEY",
     **kwargs,
 ):
@@ -55,12 +54,12 @@ def get_multicolumn_lookup(
     """
 
     query = litteralement.statements.make_multi_column_select(
-        tablename=tablename, columns=columns
+        tablename=tablename, columns=[colid] + columns
     )
     cur = conn.cursor()
     cur.execute(query)
     d = {i[1:]: i[0] for i in cur.fetchall()}
-    lookup = lookup_type(keyname="COMPOSED_KEY", d=d, **kwargs)
+    lookup = ComposedKeyLookup(fields=columns, keyname="COMPOSED_KEY", d=d, keyid=colid, **kwargs)
     return lookup
 
 
@@ -160,17 +159,13 @@ class MultiColumnLookup(ComposedKeyLookup):
             **kwargs
         """
 
-        _name = "COMPOSED_KEY"
         self.conn = conn
         self.tablename = tablename
+        self.colid = colid
+        self.columns = columns
+        _name = "COMPOSED_KEY"
         self.colname = _name
         self.keyname = _name
-        self.colid = colid
-
-        self.columns = columns
-        fields = [(i, Any) for i in columns]
-        self.Key = NamedTuple("Key", fields)
-        self.Row = NamedTuple("Row", [("id", int)] + fields)
         d = self.fetch()
         super().__init__(
             fields=columns, keyname=_name, d=d, keyid=colid
@@ -183,9 +178,10 @@ class MultiColumnLookup(ComposedKeyLookup):
         """
 
         return get_multicolumn_lookup(
-            self.conn,
+            conn=self.conn,
             tablename=self.tablename,
-            columns=[self.colid] + self.columns,
+            columns=self.columns,
+            colid=self.colid
         )
 
     @property
