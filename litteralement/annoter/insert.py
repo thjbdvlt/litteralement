@@ -9,7 +9,7 @@ from litteralement.lookups import get_morph_lookup
 from litteralement.lookups import get_lexeme_lookup
 
 
-def copy_to_from_temp(conn, table, key, columns):
+def _copy_from_temp(conn, table, key, columns):
     """Copier dans les tables depuis la table temporaire.
 
     Args:
@@ -45,31 +45,31 @@ def copy_to_from_temp(conn, table, key, columns):
                 copy.write_row((textid,) + row)
 
 
-def copy_to_mot(conn):
+def _copy_mot(conn):
     """Ajoute les mots dans la base de données."""
 
     table = "mot"
     key = "mots"
     columns = ["debut", "fin", "num", "noyau", "lexeme", "fonction"]
-    copy_to_from_temp(conn=conn, table=table, key=key, columns=columns)
+    _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
 
 
-def copy_to_token(conn):
+def _copy_token(conn):
     """Ajoute les tokens dans la base de données."""
 
     table = "token"
     key = "nonmots"
     columns = ["debut", "fin", "num"]
-    copy_to_from_temp(conn=conn, table=table, key=key, columns=columns)
+    _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
 
 
-def copy_to_phrase(conn):
+def _copy_phrase(conn):
     """Ajoute les phrases dans la base de données."""
 
     table = "phrase"
     key = "phrases"
     columns = ["debut", "fin"]
-    copy_to_from_temp(conn=conn, table=table, key=key, columns=columns)
+    _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
 
 
 def insert(dbname="litteralement"):
@@ -165,9 +165,9 @@ def insert(dbname="litteralement"):
     lookup_lex.copy_to()
 
     # copier les mots, tokens, phrases dans les tables respectives
-    copy_to_mot(conn)
-    copy_to_token(conn)
-    copy_to_phrase(conn)
+    _copy_mot(conn)
+    _copy_token(conn)
+    _copy_phrase(conn)
 
     # commit et clore la connection: fin de la fonction.
     conn.commit()
