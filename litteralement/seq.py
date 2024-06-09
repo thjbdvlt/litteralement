@@ -1,5 +1,5 @@
 class Seq:
-    """Une séquence numérique incrémentée."""
+    """Une séquence numérique auto-incrémentée."""
 
     def __init__(self):
         """Instancie une séquence."""
