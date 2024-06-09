@@ -1,10 +1,10 @@
 class Seq:
     """Une séquence numérique auto-incrémentée."""
 
-    def __init__(self):
+    def __init__(self, start=0):
         """Instancie une séquence."""
 
-        self.curval = 0
+        self.curval = start
 
     def nextval(self):
         """Retourne la prochaine valeur de la séquence.

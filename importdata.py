@@ -1,8 +1,6 @@
 import psycopg
 from litteralement.lookups.database import TryDatabaseLookup
 from litteralement.lookups.database import MultiColumnLookup
-from litteralement.lookups.core import Lookup
-from litteralement.lookups.core import ComposedKeyLookup
 
 
 dbname = "litteralement"
@@ -14,15 +12,12 @@ lookup_import = MultiColumnLookup(
     conn=conn,
     colid="id_entite",
     columns=["dataset", "id_dataset"],
-    table=["import", "_lookup_entite"],
+    table="import._lookup_entite",
 )
 
-lookup_classe = TryDatabaseLookup(conn, ["classe"])
-
-lookup_type_relation = TryDatabaseLookup(conn, "type_relation")
-lookup_type_propriete = TryDatabaseLookup(conn, "type_propriete")
-
-lookup_entites_dataset = ""
+lookup_classe = TryDatabaseLookup(conn, "onto.classe")
+lookup_type_relation = TryDatabaseLookup(conn, "onto.type_relation")
+lookup_type_propriete = TryDatabaseLookup(conn, "onto.type_propriete")
 
 
 # importation EAV
@@ -53,6 +48,7 @@ data = {
             "classe": "arbre",
             "nom": "le joli saule",
             "lueur": 0.4,
+            "est_magique": None,
             "paroles": {"depuis": "lors"},
         },
     ],
@@ -64,10 +60,16 @@ def numerise_entite(d):
     _id = d.pop("id")
     dataset = d.pop("dataset")
     classe = d.pop("classe")
+    # entity_id = lookup_classe[]
+    # ok il y a quand même un truc, là, c'est que en fait il faut la séquence de "entite".
+
+    # tout ce qui reste est des propriétés.
     proprietes = [
         {"type": lookup_type_propriete[k], "val": d[k]} for k in d
     ]
-    new = {}
+    new = {"classe": lookup_classe[classe], }
+
+# ok alors j'ai besoin
 
 
 {"a": 1}.pop("b")  # key error
