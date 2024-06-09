@@ -1,24 +1,22 @@
 import psycopg
 from litteralement.lookups.database import TryDatabaseLookup
-from litteralement.lookups import Lookup
-
-
-class ImportLookup:
-    def __init__(self, **kwargs):
-        self.tablename = "import._lookup_entite"
-        super().__init__(**kwargs)
-
-    def fetch(self):
-        query = "select dataset, id_dataset, id_entite from "
-        cur = self.conn.cursor()
-        for row in cur.execute(query):
-            yield row
+from litteralement.lookups.database import MultiColumnLookup
+from litteralement.lookups.core import Lookup
+from litteralement.lookups.core import ComposedKeyLookup
 
 
 dbname = "litteralement"
 conn = psycopg.connect(dbname=dbname)
 
 conn.execute("create temp table _temp_data (j json)")
+
+lookup_import = MultiColumnLookup(
+    conn=conn,
+    colid="id_entite",
+    columns=["dataset", "id_dataset"],
+    table="_lookup_entite",
+    schema="import",
+)
 
 lookup_classe = TryDatabaseLookup(conn, "classe")
 lookup_type_relation = TryDatabaseLookup(conn, "type_relation")
