@@ -151,6 +151,7 @@ class TryDatabaseLookup(DatabaseLookup, TryLookup):
 
         return get_binary_lookup(
             self.conn,
+            schema=self.schema,
             table=self.table,
             colid=self.colid,
             colname=self.colname,
@@ -204,6 +205,8 @@ class MultiColumnLookup(ComposedKeyLookup):
     @property
     def _copy_stmt(self):
         stmt = litteralement.statements.copy_to_multicolumns(
-            self.table, [self.colid] + self.columns
+            schema=self.schema,
+            table=self.table,
+            columns=[self.colid] + self.columns,
         )
         return stmt

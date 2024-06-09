@@ -26,7 +26,9 @@ def _copy_from_temp(conn, table, key, columns):
 
     # construire la requête pour envoyer avec colonnes multiples.
     sql_copy_send = copy_to_multicolumns(
-        table=table, columns=["texte"] + columns
+        schema="nlp",
+        table=table,
+        columns=["texte"] + columns,
     )
 
     # récupérer les docs.
@@ -77,12 +79,17 @@ def insert(dbname="litteralement"):
     conn = psycopg.connect(dbname=dbname)
 
     # créer des tables lookups pour les ids.
-    lookup_lemma = DatabaseLookup(conn, "lemme", colname="graphie")
-    lookup_pos = TryDatabaseLookup(conn, "nature")
-    lookup_dep = TryDatabaseLookup(conn, "fonction")
-    lookup_morph = TryDatabaseLookup(conn, "morph", colname="feats")
+    lookup_lemma = DatabaseLookup(
+        conn, "nlp", "lemme", colname="graphie"
+    )
+    lookup_pos = TryDatabaseLookup(conn, "nlp", "nature")
+    lookup_dep = TryDatabaseLookup(conn, "nlp", "fonction")
+    lookup_morph = TryDatabaseLookup(
+        conn, "nlp", "morph", colname="feats"
+    )
     lookup_lex = MultiColumnLookup(
         conn,
+        "nlp",
         "lexeme",
         colid="id",
         columns=["lemme", "norme", "nature", "morph"],
