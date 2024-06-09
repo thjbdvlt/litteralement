@@ -107,13 +107,21 @@ create table nlp.mot(
 ) inherits (nlp.token);
 
 
--- 3. enfin, un dernier schéma sert à ajouter les données.
+-- 3. le schéma import sert à ajouter les données.
 
 create schema if not exists import;
+
 create table import._data(
     j jsonb
 );
+
 create table import._document(
     id int,
     j jsonb
+);
+
+create table import._lookup_entite(
+    dataset smallint,
+    id_import int,
+    id_db int
 );
