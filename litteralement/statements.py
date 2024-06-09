@@ -1,7 +1,15 @@
 from psycopg.sql import SQL, Identifier
 
 
-def make_multi_column_select(table, columns, schema):
+def qualify(table):
+    return (
+        Identifier(table)
+        if isinstance(table, str)
+        else Identifier(*table)
+    )
+
+
+def make_multi_column_select(table, columns):
     """Construit un statement SELECT qui récupère plusieurs colonnes.
 
     Args:
@@ -11,16 +19,13 @@ def make_multi_column_select(table, columns, schema):
     Returns (SQL)
     """
 
-    sql_select = SQL("select ")
     sql_columns = SQL(", ").join([Identifier(i) for i in columns])
-    sql_table = SQL("from {}.{}").format(
-        Identifier(schema), Identifier(table)
-    )
-    query = sql_select + sql_columns + sql_table
+    sql_table = qualify(table)
+    query = SQL("select {} from {}").format(sql_columns, sql_table)
     return query
 
 
-def copy_to_multicolumns(table, columns, schema):
+def copy_to_multicolumns(table, columns):
     """Construit un statement COPY TO avec plusieurs colonnes.
 
     Args:
@@ -30,10 +35,9 @@ def copy_to_multicolumns(table, columns, schema):
     Returns (SQL)
     """
 
-    sql_schema = Identifier(schema)
-    sql_table = Identifier(table)
+    sql_table = qualify(table)
     sql_columns = SQL(", ").join([Identifier(i) for i in columns])
-    query = SQL("copy {}.{} ({}) from stdin").format(
-        sql_schema, sql_table, sql_columns
+    query = SQL("copy {} ({}) from stdin").format(
+        sql_table, sql_columns
     )
     return query

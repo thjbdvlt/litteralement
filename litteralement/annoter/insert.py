@@ -26,9 +26,8 @@ def _copy_from_temp(conn, table, key, columns):
 
     # construire la requête pour envoyer avec colonnes multiples.
     sql_copy_send = copy_to_multicolumns(
-        schema="nlp",
         table=table,
-        columns=["texte"] + columns,
+        columns=["nlp", "texte"] + columns,
     )
 
     # récupérer les docs.
@@ -88,9 +87,9 @@ def insert(dbname="litteralement"):
         conn, "nlp", "morph", colname="feats"
     )
     lookup_lex = MultiColumnLookup(
-        conn,
-        "nlp",
-        "lexeme",
+        conn=conn,
+        schema="nlp",
+        table="lexeme",
         colid="id",
         columns=["lemme", "norme", "nature", "morph"],
     )

@@ -14,8 +14,7 @@ lookup_import = MultiColumnLookup(
     conn=conn,
     colid="id_entite",
     columns=["dataset", "id_dataset"],
-    table="_lookup_entite",
-    schema="import",
+    table=["import", "_lookup_entite"],
 )
 
 lookup_classe = TryDatabaseLookup(conn, "classe")

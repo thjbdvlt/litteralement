@@ -8,7 +8,6 @@ import litteralement.statements
 def get_binary_lookup(
     conn,
     table,
-    schema,
     colname="nom",
     colid="id",
     lookup_type=Lookup,
@@ -25,11 +24,9 @@ def get_binary_lookup(
     Returns (Lookup, TryLookup)
     """
 
-    query = SQL("select {}, {} from {}.{}").format(
-        Identifier(colid),
-        Identifier(colname),
-        Identifier(schema),
-        Identifier(table),
+    sql_table = litteralement.statements.qualify(table)
+    query = SQL("select {}, {} from {}").format(
+        Identifier(colid), Identifier(colname), sql_table
     )
     cur = conn.cursor()
     cur.execute(query)
@@ -43,7 +40,6 @@ def get_multicolumn_lookup(
     table,
     columns,
     colid,
-    schema,
     keyname="COMPOSED_KEY",
     **kwargs,
 ):
@@ -59,7 +55,7 @@ def get_multicolumn_lookup(
     """
 
     query = litteralement.statements.make_multi_column_select(
-        table=table, columns=[colid] + columns, schema=schema
+        table=table, columns=[colid] + columns
     )
     cur = conn.cursor()
     cur.execute(query)
@@ -106,8 +102,7 @@ class DatabaseLookup(Lookup):
 
         return get_binary_lookup(
             self.conn,
-            table=self.table,
-            schema=self.schema,
+            table=(self.schema, self.table),
             colid=self.colid,
             colname=self.colname,
             lookup_type=Lookup,
@@ -151,8 +146,7 @@ class TryDatabaseLookup(DatabaseLookup, TryLookup):
 
         return get_binary_lookup(
             self.conn,
-            schema=self.schema,
-            table=self.table,
+            table=(self.schema, self.table),
             colid=self.colid,
             colname=self.colname,
             lookup_type=TryLookup,
@@ -196,8 +190,7 @@ class MultiColumnLookup(ComposedKeyLookup):
 
         return get_multicolumn_lookup(
             conn=self.conn,
-            schema=self.schema,
-            table=self.table,
+            table=[self.schema, self.table],
             columns=self.columns,
             colid=self.colid,
         )
@@ -205,8 +198,7 @@ class MultiColumnLookup(ComposedKeyLookup):
     @property
     def _copy_stmt(self):
         stmt = litteralement.statements.copy_to_multicolumns(
-            schema=self.schema,
-            table=self.table,
+            table=[self.schema, self.table],
             columns=[self.colid] + self.columns,
         )
         return stmt
