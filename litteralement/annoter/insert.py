@@ -27,7 +27,7 @@ def _copy_from_temp(conn, table, key, columns):
     # construire la requête pour envoyer avec colonnes multiples.
     sql_copy_send = copy_to_multicolumns(
         table=table,
-        columns=["nlp", "texte"] + columns,
+        columns=["texte"] + columns,
     )
 
     # récupérer les docs.
@@ -88,8 +88,7 @@ def insert(dbname="litteralement"):
     )
     lookup_lex = MultiColumnLookup(
         conn=conn,
-        schema="nlp",
-        table="lexeme",
+        table=["nlp", "lexeme"],
         colid="id",
         columns=["lemme", "norme", "nature", "morph"],
     )
@@ -161,7 +160,7 @@ def insert(dbname="litteralement"):
                     )
                 )
 
-    # numériser les docs
+    # numériser les docs.
     numerize_doc()
 
     # ajouter les morphologie, nature, fonctions, lemmes, dans les tables respectives.
@@ -173,7 +172,7 @@ def insert(dbname="litteralement"):
     # l'ordre est important: la table 'lexeme' dépend de 'morph', 'pos', 'lemma'. et la table 'mot' dépend de 'dep'.
     lookup_lex.copy_to()
 
-    # copier les mots, tokens, phrases dans les tables respectives
+    # copier les mots, tokens, phrases dans les tables respectives.
     _copy_mot(conn)
     _copy_token(conn)
     _copy_phrase(conn)

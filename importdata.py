@@ -17,7 +17,8 @@ lookup_import = MultiColumnLookup(
     table=["import", "_lookup_entite"],
 )
 
-lookup_classe = TryDatabaseLookup(conn, "classe")
+lookup_classe = TryDatabaseLookup(conn, ["classe"])
+
 lookup_type_relation = TryDatabaseLookup(conn, "type_relation")
 lookup_type_propriete = TryDatabaseLookup(conn, "type_propriete")
 

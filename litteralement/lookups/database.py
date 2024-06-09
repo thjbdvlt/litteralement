@@ -74,7 +74,7 @@ class DatabaseLookup(Lookup):
     """Un Lookup pour les tables ."""
 
     def __init__(
-        self, conn, schema, table, colname="nom", colid="id", **kwargs
+        self, conn, table, colname="nom", colid="id", **kwargs
     ):
         """Instancie un DatabaseLookup.
 
@@ -87,7 +87,6 @@ class DatabaseLookup(Lookup):
 
         self.conn = conn
         self.table = table
-        self.schema = schema
         self.colname = colname
         self.keyname = colname
         self.colid = colid
@@ -102,7 +101,7 @@ class DatabaseLookup(Lookup):
 
         return get_binary_lookup(
             self.conn,
-            table=(self.schema, self.table),
+            table=self.table,
             colid=self.colid,
             colname=self.colname,
             lookup_type=Lookup,
@@ -146,7 +145,7 @@ class TryDatabaseLookup(DatabaseLookup, TryLookup):
 
         return get_binary_lookup(
             self.conn,
-            table=(self.schema, self.table),
+            table=self.table,
             colid=self.colid,
             colname=self.colname,
             lookup_type=TryLookup,
@@ -156,9 +155,7 @@ class TryDatabaseLookup(DatabaseLookup, TryLookup):
 class MultiColumnLookup(ComposedKeyLookup):
     copy_to = DatabaseLookup.copy_to
 
-    def __init__(
-        self, conn, schema, table, columns, colid="id", **kwargs
-    ):
+    def __init__(self, conn, table, columns, colid="id", **kwargs):
         """Instancie un MultiColumnLookup.
 
         Args:
@@ -171,7 +168,6 @@ class MultiColumnLookup(ComposedKeyLookup):
 
         self.conn = conn
         self.table = table
-        self.schema = schema
         self.colid = colid
         self.columns = columns
         _name = "COMPOSED_KEY"
@@ -190,7 +186,7 @@ class MultiColumnLookup(ComposedKeyLookup):
 
         return get_multicolumn_lookup(
             conn=self.conn,
-            table=[self.schema, self.table],
+            table=self.table,
             columns=self.columns,
             colid=self.colid,
         )
@@ -198,7 +194,7 @@ class MultiColumnLookup(ComposedKeyLookup):
     @property
     def _copy_stmt(self):
         stmt = litteralement.statements.copy_to_multicolumns(
-            table=[self.schema, self.table],
+            table=self.table,
             columns=[self.colid] + self.columns,
         )
         return stmt
