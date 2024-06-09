@@ -1,6 +1,8 @@
 import tqdm
 import json
+from psycopg.sql import SQL
 from litteralement.lang.fr import todict
+from litteralement.statements import copy_to_multicolumns
 
 
 def annoter(
@@ -60,3 +62,54 @@ def annoter(
             copy.write_row(i)
 
     conn.commit()
+
+
+def copy_to_from_temp(conn, table, key, columns):
+    """Copier dans les tables depuis la table temporaire.
+
+    Args:
+        conn (Connection):  la connection à la base de données.
+        table (str):  le nom de la table.
+        key (str):  la clé du types d'éléments dans le doc.
+        columns (list[str]):  la liste de colonnes (et clés d'éléments.)
+    """
+
+    cur_get = conn.cursor()
+    cur_send = conn.cursor()
+    sql_get = SQL("select _id, j from _temp_doc")
+    sql_copy_send = copy_to_multicolumns(table=table, columns=columns)
+    docs = cur_get.execute(sql_get)
+    with cur_send.copy(sql_copy_send) as copy:
+        for i in docs:
+            textid = i[0]
+            doc = i[1]
+            for x in doc[key]:
+                row = (x[c] for c in columns)
+                copy.write_row((textid) + row)
+
+
+def copy_to_mot(conn):
+    """Ajoute les mots dans la base de données."""
+
+    table = "mot"
+    key = "mots"
+    columns = ["debut", "fin", "num", "noyau", "lexeme", "fonction"]
+    copy_to_from_temp(conn=conn, table=table, key=key, columns=columns)
+
+
+def copy_to_token(conn):
+    """Ajoute les tokens dans la base de données."""
+
+    table = "token"
+    key = "nonmots"
+    columns = ["debut", "fin", "num"]
+    copy_to_from_temp(conn=conn, table=table, key=key, columns=columns)
+
+
+def copy_to_phrase(conn):
+    """Ajoute les phrases dans la base de données."""
+
+    table = "phrase"
+    key = "phrase"
+    columns = ["debut", "fin"]
+    copy_to_from_temp(conn=conn, table=table, key=key, columns=columns)

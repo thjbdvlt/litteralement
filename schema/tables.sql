@@ -94,6 +94,8 @@ create table nlp.segment (
     fin int not null
 );
 
+create table nlp.phrase () inherits (nlp.segment);
+
 create table nlp.span (attrs jsonb) inherits (nlp.segment);
 
 create table nlp.token (num int not null) inherits (nlp.segment);
