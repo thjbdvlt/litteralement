@@ -1,6 +1,10 @@
+import psycopg
+import json
 from psycopg.sql import SQL, Identifier
 from litteralement.statements import make_copy_stmt
-import json
+from litteralement.statements import qualify
+from litteralement.lookups.database import TryDatabaseLookup
+from litteralement.lookups.database import MultiColumnLookup
 
 
 DATA_TABLE = "import._data"
@@ -233,3 +237,69 @@ def insert_toutes_proprietes(conn):
         for d in row_source:
             insert_une_propriete(cur_send, d)
 
+
+def insert_data(dbname='litteralement'):
+    """Insère dans les tables EAV ce qui se trouve dans import._data.
+
+    Args:
+        dbname (str)
+    """
+
+    conn = psycopg.connect(dbname=dbname)
+
+    create_data_temp_table(conn)
+
+    # récupère l'id actuel de la table "entite".
+    curval = conn.execute("select nextval('entite_id_seq')").fetchone()[0]
+
+    # construit les lookups (qui remplissent une fonction de  "join").
+    lookup_classe = TryDatabaseLookup(conn, "onto.classe")
+    lookup_type_relation = TryDatabaseLookup(conn, "onto.type_relation")
+    lookup_type_propriete = TryDatabaseLookup(conn, "onto.type_propriete")
+    # le lookup 'entite' est un peu particulier, car il n'est pas utilisé, comme les autres, pour remplir la table "entite" mais pour remplir la table "import._lookup".
+    lookup_entite = MultiColumnLookup(
+        conn=conn,
+        colid="id_entite",
+        columns=("dataset", "id_dataset"),
+        table="import._lookup_entite",
+        start_id=curval,
+    )
+
+    # deux curseurs, pour pouvoir continuer à recevoir des données en même temps qu'on en envoie.
+    cur_get = conn.cursor()
+    cur_send = conn.cursor()
+
+    # récupère les données de la table import._data, dans laquelle se trouve les JSONs avec les données à importer dans le modèle EAV.
+    sql_get = SQL("select j from {}").format(qualify(DATA_TABLE))
+    data = (i[0] for i in cur_get.execute(sql_get))
+
+    # construit un statement COPY pour mettre les données "numérisées" (dans laquelle les valeurs textuelles comme 'classe' ou 'type de relation' sont remplacées par des ID numériques).
+    sql_copy = make_copy_stmt(DATA_TEMP_TABLE, DATA_TEMP_COLUMNS)
+
+    # numérise les données JSON et place les valeurs de "entite", "relation" et "propriete" dans la table temporaire. il n'est pas possible de les mettres directements dans les tables, car il faut d'abord remplir "classe", "type_propriete", "type_relation".
+    with cur_send.copy(sql_copy) as copy:
+        for d in data:
+            num = numerise_row(
+                d,
+                lookup_entite=lookup_entite,
+                lookup_classe=lookup_classe,
+                lookup_type_relation=lookup_type_relation,
+                lookup_type_propriete=lookup_type_propriete,
+            )
+            row = [num[i] for i in DATA_TEMP_COLUMNS]
+            copy.write_row([json.dumps(i) for i in row])
+
+    # ajoute dans les tables associées les données nouvelles.
+    lookup_classe.copy_to()
+    lookup_type_relation.copy_to()
+    lookup_type_propriete.copy_to()
+    lookup_entite.copy_to()
+
+    # ajoute les entités, les relations, les propriétés. les tables "entité" et "relation" sont les plus simples, car chaque ligne a la même structure: j'utilise donc la méthode COPY. la table "propriété", en revanche, est plus compliquée, car le datatype de la valeur (ou l'absence de valeur) de la propriété détermine la table dans laquelle elle doit être placée, les statement INSERT sont donc construit dynamiquement.
+    copy_entites(conn)
+    copy_relations(conn)
+    insert_toutes_proprietes(conn)
+
+    # fin de la fonction: commit et terminer la connexion.
+    conn.commit()
+    conn.close()

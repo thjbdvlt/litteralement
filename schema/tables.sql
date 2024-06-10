@@ -99,7 +99,10 @@ create table nlp.phrase () inherits (nlp.segment);
 
 create table nlp.span (attrs jsonb) inherits (nlp.segment);
 
-create table nlp.token (num int not null) inherits (nlp.segment);
+create table nlp.token (
+    num int not null,
+    unique(texte, num)
+) inherits (nlp.segment);
 
 create table nlp.mot(
     fonction smallint references nlp.fonction(id) not null,
@@ -126,3 +129,27 @@ create table import._lookup_entite(
     id_dataset int,
     id_entite int
 );
+
+-- 4. ajouter les contraintes non-transitives (héritage).
+
+-- 4.1 propriété -> entité
+alter table public.prop_text add constraint prop_text_entite_fk foreign key entite references entite(id);
+alter table public.prop_int add constraint prop_int_entite_fk foreign key entite references entite(id);
+alter table public.prop_float add constraint prop_float_entite_fk foreign key entite references entite(id);
+alter table public.prop_date add constraint prop_date_entite_fk foreign key entite references entite(id);
+alter table public.prop_jsonb add constraint prop_jsonb_entite_fk foreign key entite references entite(id);
+alter table public.texte add constraint texte_entite_fk foreign key entite references entite(id);
+
+-- 4.2 propriété -> type_propriete
+alter table public.prop_text add constraint prop_text_type_fk foreign key type references type_propriete(id);
+alter table public.prop_int add constraint prop_int_type_fk foreign key type references type_propriete(id);
+alter table public.prop_float add constraint prop_float_type_fk foreign key type references type_propriete(id);
+alter table public.prop_date add constraint prop_date_type_fk foreign key type references type_propriete(id);
+alter table public.prop_jsonb add constraint prop_jsonb_type_fk foreign key type references type_propriete(id);
+alter table public.texte add constraint texte_type_fk foreign key entite references type_propriete(id);
+
+-- 4.3
+alter table nlp.token add constraint token_texte_fk foreign key texte references texte(id);
+alter table nlp.mot add constraint mot_texte_fk foreign key texte references texte(id);
+alter table nlp.phrase add constraint phrase_texte_fk foreign key texte references texte(id);
+alter table nlp.span add constraint phrase_texte_fk foreign key texte references texte(id);
