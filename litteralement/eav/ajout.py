@@ -1,4 +1,3 @@
-import psycopg
 import json
 from psycopg.sql import SQL, Identifier
 from litteralement.util.statements import make_copy_stmt
@@ -46,12 +45,20 @@ def _numerise_entite(
     Returns (dict):  un nouveau dict, avec des foreign keys.
     """
 
+    # l'id de l'entité dans le dataset
     id_dataset = entite["id"]
+
+    # le nom de sa classe
     classe = entite["classe"]
+
+    # la 'Key' qui permet d'obtenir, dans la lookup table, l'identifiant de l'entité dans la base de données, est composée de l'id du dataset et de l'id de l'entité dans le dataset.
     key = lookup_entite.Key(
         **{"dataset": dataset, "id_dataset": id_dataset}
     )
+
+    # récupère l'id de l'entité dans la database
     id_entite = lookup_entite[key]
+
     proprietes = [
         {
             "type": lookup_type_propriete[k],
@@ -84,13 +91,18 @@ def _numerise_relation(
     Returns (dict)
     """
 
+    # récupère l'id du type de relation.
     type_relation = lookup_type_relation[relation["type"]]
+
     d = {"type": type_relation}
+
+    # récupère les ids des sujet et objets de la relation.
     for i in ("sujet", "objet"):
         key = lookup_entite.key_from_dict_strict(
             {"dataset": dataset, "id_dataset": relation[i]}
         )
         d[i] = lookup_entite[key]
+
     return d
 
 
@@ -130,17 +142,35 @@ def _numerise_row(data, **kwargs):
     Returns (tuple):  (entites, relations, proprietes)
     """
 
+    # l'id du dataset, qui permet de mettre en relations les entités.
     dataset = data["dataset"]
+
+    # récupère les relations.
     relations = [
         _numerise_relation(i, dataset, **kwargs)
         for i in data["relations"]
     ]
+
+    # récupère les relations incomplète dans les entités.
+    for i in data["entites"]:
+        if "relations" in i:
+            entites_relations = []
+            for rel in i.pop("relations"):
+                rel["sujet"] = i["id"]
+                entites_relations.append(rel)
+    relations.extend(entites_relations)
+
+    # numérise les entités (trouve les id dans la database).
     entites = [
         _numerise_entite(i, dataset, **kwargs) for i in data["entites"]
     ]
+
+    # récupère les propriétés des entités.
     proprietes = []
     for i in entites:
         proprietes.extend(i.pop("proprietes"))
+
+    # reconstruit le nouveau dict
     d = {
         "entites": entites,
         "relations": relations,
@@ -159,13 +189,20 @@ def _copy_from_temp(conn, table, columns, source_column):
         source_column (str):  la colonne dans la TEMP TABLE.
     """
 
+    # deux curseurs pour envoyer et recevoir simultanément.
     cur_send = conn.cursor()
     cur_get = conn.cursor()
+
+    # construire le statement COPY qui cherche une colonne dans la TEMP TABLE.
     copy_sql = make_copy_stmt(table, columns)
     sql_get = SQL("select distinct {} from {}").format(
         Identifier(source_column), Identifier(DATA_TEMP_TABLE)
     )
+
+    # récupérer les données.
     data = (i[0] for i in cur_get.execute(sql_get))
+
+    # copier les données dans la table.
     with cur_send.copy(copy_sql) as copy:
         for row in data:
             for e in row:
@@ -207,20 +244,33 @@ def _insert_une_propriete(cursor, d):
     Returns (SQL): le INSERT statement.
     """
 
+    # la table dépend du datatype de la valeur.
     table = _table_val_from_datatype(d["val"])
+
+    # le colonnes dépendent de la table.
     columns = (
         ("entite", "type")
         if table == "propriete"
         else ("entite", "type", "val")
     )
+
+    # si le datatype est JSONB, il faut le sérialiser.
     if table == "prop_jsonb":
         d["val"] = json.dumps(d["val"])
+
+    # le nombre de placeholders dépend du nombre de colonnes.
     placeholders = ", ".join(["%s" for i in columns])
+
+    # construction du statement
     stmt = f"insert into {{}} ({{}}) select {placeholders}"
     sql_table = Identifier(table)
     sql_columns = SQL(", ").join([Identifier(i) for i in columns])
     sql_stmt = SQL(stmt).format(sql_table, sql_columns)
+
+    # la ROW est construite dynamiquement, on fonction du nombre de colonnes.
     row = [d[i] for i in columns]
+
+    # exécute le statement d'insertion
     cursor.execute(sql_stmt, row)
 
 
@@ -230,8 +280,12 @@ def _insert_toutes_proprietes(conn):
     Args:
         conn (Connection)
     """
+
+    # récupère les propriétés dans la TEMP TABLE.
     sql_get = "select distinct proprietes from " + DATA_TEMP_TABLE
     data = (i[0] for i in conn.execute(sql_get))
+
+    # insérer les propriétés
     cur_send = conn.cursor()
     for row_source in data:
         for d in row_source:
@@ -281,6 +335,10 @@ def importer(conn):
     # numérise les données JSON et place les valeurs de "entite", "relation" et "propriete" dans la table temporaire. il n'est pas possible de les mettres directements dans les tables, car il faut d'abord remplir "classe", "type_propriete", "type_relation".
     with cur_send.copy(sql_copy) as copy:
         for d in data:
+            if "dataset" not in d:
+                d["dataset"] = conn.execute(
+                    "select max(dataset)+1 from import._lookup_entite;"
+                )
             num = _numerise_row(
                 d,
                 lookup_entite=lookup_entite,

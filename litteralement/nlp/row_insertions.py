@@ -1,5 +1,4 @@
 import json
-import psycopg
 from psycopg.sql import SQL
 import litteralement.util.statements
 from litteralement.lookups.database import DatabaseLookup
