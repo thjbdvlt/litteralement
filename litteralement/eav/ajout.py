@@ -45,19 +45,19 @@ def _numerise_entite(
     Returns (dict):  un nouveau dict, avec des foreign keys.
     """
 
-    # l'id de l'entité dans le dataset
-    id_dataset = entite["id"]
+    # l'id (optionnelle) de l'entité dans le dataset
+    id_dataset = entite.get("id")
+    if id_dataset:
+        # la 'Key' qui permet d'obtenir, dans la lookup table, l'identifiant de l'entité dans la base de données, est composée de l'id du dataset et de l'id de l'entité dans le dataset.
+        key = lookup_entite.Key(
+            **{"dataset": dataset, "id_dataset": id_dataset}
+        )
 
-    # le nom de sa classe
-    classe = entite["classe"]
-
-    # la 'Key' qui permet d'obtenir, dans la lookup table, l'identifiant de l'entité dans la base de données, est composée de l'id du dataset et de l'id de l'entité dans le dataset.
-    key = lookup_entite.Key(
-        **{"dataset": dataset, "id_dataset": id_dataset}
-    )
-
-    # récupère l'id de l'entité dans la database
-    id_entite = lookup_entite[key]
+        # récupère l'id de l'entité dans la database.
+        id_entite = lookup_entite[key]
+    else:
+        # si l'entité n'a pas d'id, en génére une.
+        id_entite = lookup_entite.seq.nextval()
 
     proprietes = [
         {
@@ -67,11 +67,29 @@ def _numerise_entite(
         }
         for k in set(entite) - set(["id", "classe"])
     ]
+
+    relations = []
+    if "relations" in entite:
+        for i in entite["relations"]:
+            key_objet = lookup_entite.Key(
+                **{"dataset": dataset, "id_dataset": i["objet"]}
+            )
+            id_objet = lookup_entite[key_objet]
+            id_type = lookup_type_relation[i["type"]]
+            relations.append(
+                {"objet": id_objet, "sujet": id_entite, "type": id_type}
+            )
+
+    # le nom de sa classe
+    classe = entite["classe"]
+
     d = {
         "classe": lookup_classe[classe],
         "id": id_entite,
         "proprietes": proprietes,
+        "relations": relations,
     }
+
     return d
 
 
@@ -151,19 +169,15 @@ def _numerise_row(data, **kwargs):
         for i in data["relations"]
     ]
 
-    # récupère les relations incomplète dans les entités.
-    for i in data["entites"]:
-        if "relations" in i:
-            entites_relations = []
-            for rel in i.pop("relations"):
-                rel["sujet"] = i["id"]
-                entites_relations.append(rel)
-    relations.extend(entites_relations)
-
     # numérise les entités (trouve les id dans la database).
     entites = [
         _numerise_entite(i, dataset, **kwargs) for i in data["entites"]
     ]
+
+    # récupère les relations incomplète dans les entités.
+    for i in data["entites"]:
+        if "relations" in i:
+            relations.extend(i.pop("relations"))
 
     # récupère les propriétés des entités.
     proprietes = []
