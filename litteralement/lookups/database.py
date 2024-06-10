@@ -5,7 +5,7 @@ from litteralement.lookups.core import ComposedKeyLookup
 import litteralement.statements
 
 
-def get_binary_lookup(
+def _get_binary_lookup(
     conn,
     table,
     colname="nom",
@@ -35,7 +35,7 @@ def get_binary_lookup(
     return lookup
 
 
-def get_multicolumn_lookup(
+def _get_multicolumn_lookup(
     conn,
     table,
     columns,
@@ -99,7 +99,7 @@ class DatabaseLookup(Lookup):
         Returns (Lookup)
         """
 
-        return get_binary_lookup(
+        return _get_binary_lookup(
             self.conn,
             table=self.table,
             colid=self.colid,
@@ -144,7 +144,7 @@ class TryDatabaseLookup(DatabaseLookup, TryLookup):
         Returns (Lookup)
         """
 
-        return get_binary_lookup(
+        return _get_binary_lookup(
             self.conn,
             table=self.table,
             colid=self.colid,
@@ -185,7 +185,7 @@ class MultiColumnLookup(ComposedKeyLookup):
         Returns (Lookup)
         """
 
-        return get_multicolumn_lookup(
+        return _get_multicolumn_lookup(
             conn=self.conn,
             table=self.table,
             columns=self.columns,

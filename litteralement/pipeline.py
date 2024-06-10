@@ -1,6 +1,6 @@
 from spacy.language import Language
 import spacy
-import tokentype
+import tokentype  # marqué comme 'unused' mais utilisé en arrière fond par spacy
 
 
 @Language.component("sent_on_newline")

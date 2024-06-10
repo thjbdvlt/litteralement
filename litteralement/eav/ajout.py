@@ -12,7 +12,7 @@ DATA_TEMP_TABLE = "_temp_data"
 DATA_TEMP_COLUMNS = ("entites", "relations", "proprietes")
 
 
-def create_data_temp_table(conn):
+def _create_data_temp_table(conn):
     """Crée une table temporaire pour les données à importer.
 
     Args:
@@ -28,7 +28,7 @@ def create_data_temp_table(conn):
     conn.execute(sql)
 
 
-def numerise_entite(
+def _numerise_entite(
     entite,
     dataset,
     lookup_entite,
@@ -68,7 +68,7 @@ def numerise_entite(
     return d
 
 
-def numerise_relation(
+def _numerise_relation(
     relation,
     dataset,
     lookup_type_relation,
@@ -94,7 +94,7 @@ def numerise_relation(
     return d
 
 
-def table_val_from_datatype(val):
+def _table_val_from_datatype(val):
     """Retourne le nom de la table correspondant au datatype.
 
     Args:
@@ -121,7 +121,7 @@ def table_val_from_datatype(val):
     return "prop_jsonb"
 
 
-def numerise_row(data, **kwargs):
+def _numerise_row(data, **kwargs):
     """Numerise un ensemble de données (entités et relations).
 
     Args:
@@ -132,11 +132,11 @@ def numerise_row(data, **kwargs):
 
     dataset = data["dataset"]
     relations = [
-        numerise_relation(i, dataset, **kwargs)
+        _numerise_relation(i, dataset, **kwargs)
         for i in data["relations"]
     ]
     entites = [
-        numerise_entite(i, dataset, **kwargs) for i in data["entites"]
+        _numerise_entite(i, dataset, **kwargs) for i in data["entites"]
     ]
     proprietes = []
     for i in entites:
@@ -149,7 +149,7 @@ def numerise_row(data, **kwargs):
     return d
 
 
-def copy_from_temp(conn, table, columns, source_column):
+def _copy_from_temp(conn, table, columns, source_column):
     """COPY depuis la table temporaire vers une autre table.
 
     Args:
@@ -172,7 +172,7 @@ def copy_from_temp(conn, table, columns, source_column):
                 copy.write_row([e[i] for i in columns])
 
 
-def copy_entites(conn):
+def _copy_entites(conn):
     """Copie les entités depuis la table temporaire.
 
     Args:
@@ -182,10 +182,10 @@ def copy_entites(conn):
     columns = ("id", "classe")
     source_column = "entites"
     table = "entite"
-    copy_from_temp(conn, table, columns, source_column)
+    _copy_from_temp(conn, table, columns, source_column)
 
 
-def copy_relations(conn):
+def _copy_relations(conn):
     """Copie les relations depuis la table temporaire.
 
     Args:
@@ -195,10 +195,10 @@ def copy_relations(conn):
     columns = ("type", "sujet", "objet")
     source_column = "relations"
     table = "relation"
-    copy_from_temp(conn, table, columns, source_column)
+    _copy_from_temp(conn, table, columns, source_column)
 
 
-def insert_une_propriete(cursor, d):
+def _insert_une_propriete(cursor, d):
     """Construit un INSERT statement en fonction du type de données.
 
     Args:
@@ -207,14 +207,14 @@ def insert_une_propriete(cursor, d):
     Returns (SQL): le INSERT statement.
     """
 
-    table = table_val_from_datatype(d["val"])
+    table = _table_val_from_datatype(d["val"])
     columns = (
         ("entite", "type")
         if table == "propriete"
         else ("entite", "type", "val")
     )
-    if table == 'prop_jsonb':
-        d['val'] = json.dumps(d['val'])
+    if table == "prop_jsonb":
+        d["val"] = json.dumps(d["val"])
     placeholders = ", ".join(["%s" for i in columns])
     stmt = f"insert into {{}} ({{}}) select {placeholders}"
     sql_table = Identifier(table)
@@ -224,7 +224,7 @@ def insert_une_propriete(cursor, d):
     cursor.execute(sql_stmt, row)
 
 
-def insert_toutes_proprietes(conn):
+def _insert_toutes_proprietes(conn):
     """Insère toutes les propriétés depuis la TEMP TABLE.
 
     Args:
@@ -235,10 +235,10 @@ def insert_toutes_proprietes(conn):
     cur_send = conn.cursor()
     for row_source in data:
         for d in row_source:
-            insert_une_propriete(cur_send, d)
+            _insert_une_propriete(cur_send, d)
 
 
-def insert_data(dbname='litteralement'):
+def importer(dbname="litteralement"):
     """Insère dans les tables EAV ce qui se trouve dans import._data.
 
     Args:
@@ -247,15 +247,19 @@ def insert_data(dbname='litteralement'):
 
     conn = psycopg.connect(dbname=dbname)
 
-    create_data_temp_table(conn)
+    _create_data_temp_table(conn)
 
     # récupère l'id actuel de la table "entite".
-    curval = conn.execute("select nextval('entite_id_seq')").fetchone()[0]
+    curval = conn.execute("select nextval('entite_id_seq')").fetchone()[
+        0
+    ]
 
     # construit les lookups (qui remplissent une fonction de  "join").
     lookup_classe = TryDatabaseLookup(conn, "onto.classe")
     lookup_type_relation = TryDatabaseLookup(conn, "onto.type_relation")
-    lookup_type_propriete = TryDatabaseLookup(conn, "onto.type_propriete")
+    lookup_type_propriete = TryDatabaseLookup(
+        conn, "onto.type_propriete"
+    )
     # le lookup 'entite' est un peu particulier, car il n'est pas utilisé, comme les autres, pour remplir la table "entite" mais pour remplir la table "import._lookup".
     lookup_entite = MultiColumnLookup(
         conn=conn,
@@ -279,7 +283,7 @@ def insert_data(dbname='litteralement'):
     # numérise les données JSON et place les valeurs de "entite", "relation" et "propriete" dans la table temporaire. il n'est pas possible de les mettres directements dans les tables, car il faut d'abord remplir "classe", "type_propriete", "type_relation".
     with cur_send.copy(sql_copy) as copy:
         for d in data:
-            num = numerise_row(
+            num = _numerise_row(
                 d,
                 lookup_entite=lookup_entite,
                 lookup_classe=lookup_classe,
@@ -296,9 +300,9 @@ def insert_data(dbname='litteralement'):
     lookup_entite.copy_to()
 
     # ajoute les entités, les relations, les propriétés. les tables "entité" et "relation" sont les plus simples, car chaque ligne a la même structure: j'utilise donc la méthode COPY. la table "propriété", en revanche, est plus compliquée, car le datatype de la valeur (ou l'absence de valeur) de la propriété détermine la table dans laquelle elle doit être placée, les statement INSERT sont donc construit dynamiquement.
-    copy_entites(conn)
-    copy_relations(conn)
-    insert_toutes_proprietes(conn)
+    _copy_entites(conn)
+    _copy_relations(conn)
+    _insert_toutes_proprietes(conn)
 
     # fin de la fonction: commit et terminer la connexion.
     conn.commit()
