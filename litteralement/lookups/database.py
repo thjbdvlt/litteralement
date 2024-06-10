@@ -176,7 +176,7 @@ class MultiColumnLookup(ComposedKeyLookup):
         self.keyname = _name
         d = self.fetch()
         super().__init__(
-            fields=columns, keyname=_name, d=d, keyid=colid
+            fields=columns, keyname=_name, d=d, keyid=colid, **kwargs
         )
 
     def fetch(self):

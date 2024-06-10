@@ -8,17 +8,18 @@ conn = psycopg.connect(dbname=dbname)
 
 conn.execute("create temp table _temp_data (j json)")
 
+curval = conn.execute("select nextval('entite_id_seq')").fetchone()[0]
+
 lookup_import = MultiColumnLookup(
     conn=conn,
     colid="id_entite",
     columns=["dataset", "id_dataset"],
     table="import._lookup_entite",
+    start_id=curval,
 )
-
 lookup_classe = TryDatabaseLookup(conn, "onto.classe")
 lookup_type_relation = TryDatabaseLookup(conn, "onto.type_relation")
 lookup_type_propriete = TryDatabaseLookup(conn, "onto.type_propriete")
-
 
 # importation EAV
 # importer les données dans les tables entités, classes, types de proprités/relations, relations, propriétés.
@@ -35,16 +36,15 @@ lookup_type_propriete = TryDatabaseLookup(conn, "onto.type_propriete")
 # ha oui yavait le truc des IDs tout ça.
 
 data = {
+    "dataset": 1,
     "entites": [
         {
             "id": 1,
-            "dataset": 1,
             "classe": "lieu",
             "nom": "chemin du saule",
         },
         {
             "id": 2,
-            "dataset": 1,
             "classe": "arbre",
             "nom": "le joli saule",
             "lueur": 0.4,
@@ -55,19 +55,58 @@ data = {
     "relations": [{"sujet": 1, "objet": 2, "type": "passe à côté de"}],
 }
 
+import orjson
 
-def numerise_entite(d):
-    _id = d.pop("id")
-    dataset = d.pop("dataset")
-    classe = d.pop("classe")
-    # entity_id = lookup_classe[]
-    # ok il y a quand même un truc, là, c'est que en fait il faut la séquence de "entite".
+# ou alors je fais ça plus tard?
+def table_val_from_datatype(val):
+    if isinstance(val, str):
+        return 'texte'
+    elif isinstance(val, int):
+        return 'prop_int'
+    elif isinstance(val, float):
+        return 'prop_float'
+    elif not val:
+        return 'propriete'
+    elif isinstance(val, (dict, list, tuple)):
+        return 'prop_jsonb'
+    return 'prop_jsonb'
 
-    # tout ce qui reste est des propriétés.
+
+def numerise_entite(entite, dataset):
+    """Prépare un dict décrivant une entité.
+
+    Args:
+        entite (dict):  le dictionnaire décrivant l'entité.
+        dataset (int):  l'identifiant du dataset.
+
+    Returns (dict):  un nouveau dict, avec des foreign keys.
+    """
+
+    id_dataset = entite.pop("id")
+    classe = entite.pop("classe")
     proprietes = [
-        {"type": lookup_type_propriete[k], "val": d[k]} for k in d
+        {"type": lookup_type_propriete[k], "val": entite[k]}
+        for k in entite
     ]
-    new = {"classe": lookup_classe[classe], }
+    key = lookup_import.Key(
+        **{"dataset": dataset, "id_dataset": id_dataset}
+    )
+    d = {
+        "classe": lookup_classe[classe],
+        "id": lookup_import[key],
+        "proprietes": proprietes,
+    }
+    return d
+
+
+numerise_entite(data['entites'][0], data['dataset'])
+
+def numerise_relation(relation):
+
+
+lookup_import.Key._fields
+
+key = lookup_import.Key(**{"dataset": 1, "id_dataset": 10})
 
 # ok alors j'ai besoin
 

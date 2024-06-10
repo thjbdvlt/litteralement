@@ -5,7 +5,7 @@ import litteralement.seq
 class Lookup:
     """Lookup Table sous la forme {nom: id}, avec génération incrémentale d'id."""
 
-    def __init__(self, keyname="nom", d=None, keyid="id"):
+    def __init__(self, keyname="nom", d=None, keyid="id", start_id=0):
         """Instancie une table lookup simple: {label: id}.
 
         Args:
@@ -29,7 +29,7 @@ class Lookup:
             raise ValueError("initial values must be unique.")
 
         self.d = d
-        self.seq = litteralement.seq.Seq()
+        self.seq = litteralement.seq.Seq(start=start_id)
         self.ersatz = set()
         self._update_sequence()
 
@@ -169,10 +169,21 @@ class TryLookup(Lookup):
 
 
 class ComposedKeyLookup(Lookup):
+    """Lookup avec Key composée (tuple)."""
+
     def __init__(
-        self, fields, d=None, keyid="id", keyname="COMPOSED_KEY"
+        self, fields, keyid="id", keyname="COMPOSED_KEY", **kwargs
     ):
-        super().__init__(keyname=keyname, d=d, keyid=keyid)
+        """Instancie un ComposedKeyLookup.
+
+        Args:
+            fields (list):  spécifique au ComposedKeyLookup, une série de fields.
+            d (dict, list):  un lookup (dict, list) à charger.
+            keyid (str):  l'identifiant de la propriété ID.
+            keyname (str):  l'identifiant de la propriété KEY.
+        """
+
+        super().__init__(keyname=keyname, keyid=keyid, **kwargs)
         self.fields = fields
         tuple_fields = [(i, Any) for i in fields]
         self.Key = NamedTuple("Key", tuple_fields)
@@ -185,3 +196,26 @@ class ComposedKeyLookup(Lookup):
         d = self.d
         for i in d:
             yield Item(*((d[i],) + i))
+
+    def key_from_dict(self, d):
+        """Construit une Key à partir d'un dict (qui peut avoir des éléments supplémentaires.)
+
+        Args:
+            d (dict):  le dict source.
+
+        Returns (Key):  la Key construite à partir du dict.
+        """
+
+        fields = self.Key._fields
+        return self.Key(**{d[i] for i in d if i in fields})
+
+    def key_from_dict_strict(self, d):
+        """Construit une Key à partir d'un dict qui est strictement équivalent.
+
+        Args:
+            d (dict):  le dict source.
+
+        Returns (Key):  la Key construite à partir du dict.
+        """
+
+        return self.Key(**d)
