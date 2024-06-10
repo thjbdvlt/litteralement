@@ -55,7 +55,7 @@ def get_multicolumn_lookup(
     """
 
     query = litteralement.statements.make_multi_column_select(
-        table=table, columns=[colid] + columns
+        table=table, columns=(colid,) + tuple(columns)
     )
     cur = conn.cursor()
     cur.execute(query)
@@ -196,6 +196,6 @@ class MultiColumnLookup(ComposedKeyLookup):
     def _copy_stmt(self):
         stmt = litteralement.statements.copy_to_multicolumns(
             table=self.table,
-            columns=[self.colid] + self.columns,
+            columns=(self.colid) + tuple(self.columns),
         )
         return stmt

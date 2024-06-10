@@ -158,6 +158,15 @@ def numerise_row(data, **kwargs):
 
 
 def copy_from_temp(conn, table, columns, source_column):
+    """COPY depuis la table temporaire vers une autre table.
+
+    Args:
+        conn (Connection)
+        table (str):  la table cible.
+        columns (list[str]):  les colonnes cibles.
+        source_column (str):  la colonne dans la TEMP TABLE.
+    """
+
     cur_send = conn.cursor()
     cur_get = conn.cursor()
     copy_sql = make_copy_stmt(table, columns)
@@ -185,7 +194,7 @@ def copy_entites(conn):
 
 
 def copy_relations(conn):
-    """Copie les entités depuis la table temporaire.
+    """Copie les relations depuis la table temporaire.
 
     Args:
         conn (Connection)
@@ -195,3 +204,27 @@ def copy_relations(conn):
     source_column = "relations"
     table = "relation"
     copy_from_temp(conn, table, columns, source_column)
+
+
+def insert_propriete(cursor, d):
+    """Construit un INSERT statement en fonction du type de données.
+
+    Args:
+        val (Any): la valeur, qui détermine la table.
+
+    Returns (SQL): le INSERT statement.
+    """
+
+    table = table_val_from_datatype(d["val"])
+    columns = (
+        ("entite", "type")
+        if table == "propriete"
+        else ("entite", "type", "val")
+    )
+    placeholders = ", ".join(["%s" for i in columns])
+    stmt = "insert into {} ({}) values {}"
+    sql_table = Identifier(table)
+    sql_columns = [Identifier(i) for i in columns]
+    stmt = SQL(stmt).format(sql_table, sql_columns, placeholders)
+    row = [d[i] for i in columns]
+    cursor.execute(stmt, row)

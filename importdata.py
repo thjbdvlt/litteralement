@@ -7,11 +7,12 @@ from litteralement.statements import qualify
 from litteralement.statements import make_copy_stmt
 from litteralement.importer.importdata import numerise_row
 from litteralement.importer.importdata import create_data_temp_table
+from litteralement.importer.importdata import copy_entites
+from litteralement.importer.importdata import copy_relations
+from litteralement.importer.importdata import insert_property
 from litteralement.importer.importdata import DATA_TEMP_TABLE
 from litteralement.importer.importdata import DATA_TABLE
 from litteralement.importer.importdata import DATA_TEMP_COLUMNS
-from litteralement.importer.importdata import copy_entites
-from litteralement.importer.importdata import copy_relations
 # from litteralement.importer.importdata import copy_proprietes
 
 
@@ -60,11 +61,21 @@ copy_entites(conn)
 copy_relations(conn)
 
 # copy_proprietes(conn)
+sql_get = "select distinct proprietes from " + DATA_TEMP_TABLE
+data = (i[0] for i in conn.execute(sql_get))
+for row_source in data:
+    for d in row_source:
+        stmt, row = insert_property(d)
+        cur_send.execute(
+            stmt,
+        )
 
 
 # des tests
 list(conn.execute("select * from entite"))
+
 list(conn.execute("select * from relation"))
+
 list(conn.execute("select * from type_relation"))
 
 
