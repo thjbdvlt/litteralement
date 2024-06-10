@@ -44,3 +44,21 @@ def copy_to_multicolumns(table, columns):
         sql_table, sql_columns
     )
     return query
+
+
+def make_copy_stmt(table, columns):
+    """Construit un statemnt 'copy' dynamiquement.
+
+    Args:
+        table (str)
+        columns (list[str])
+
+    Returns (SQL):  le statement COPY ... FROM STDIN.
+    """
+
+    copy_table = qualify(table)
+    copy_columns = SQL(", ".join([i for i in columns]))
+    sql_copy = SQL("copy {} ({}) from stdin").format(
+        copy_table, copy_columns
+    )
+    return sql_copy

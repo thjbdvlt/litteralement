@@ -1,16 +1,24 @@
 import psycopg
+import json
+from psycopg.sql import SQL, Identifier
 from litteralement.lookups.database import TryDatabaseLookup
 from litteralement.lookups.database import MultiColumnLookup
+from litteralement.statements import qualify
+from litteralement.statements import make_copy_stmt
+from litteralement.importer.importdata import numerise
+from litteralement.importer.importdata import create_data_temp_table
+from litteralement.importer.importdata import DATA_TEMP_TABLE
+from litteralement.importer.importdata import DATA_TABLE
+from litteralement.importer.importdata import DATA_TEMP_COLUMNS
 
 
 dbname = "litteralement"
 conn = psycopg.connect(dbname=dbname)
 
-conn.execute("create temp table _temp_data (j json)")
+create_data_temp_table(conn)
 
 curval = conn.execute("select nextval('entite_id_seq')").fetchone()[0]
-
-lookup_import = MultiColumnLookup(
+lookup_entite = MultiColumnLookup(
     conn=conn,
     colid="id_entite",
     columns=["dataset", "id_dataset"],
@@ -21,110 +29,110 @@ lookup_classe = TryDatabaseLookup(conn, "onto.classe")
 lookup_type_relation = TryDatabaseLookup(conn, "onto.type_relation")
 lookup_type_propriete = TryDatabaseLookup(conn, "onto.type_propriete")
 
-# importation EAV
-# importer les données dans les tables entités, classes, types de proprités/relations, relations, propriétés.
-
-# - classes
-# - types propriété
-# - types relation
-# - entite
-# - relation
-# - propriétés (toutes les tables)
-
-# reprendre le format d'importation?
-# (possible aussi: de mettre dans un dossier et que l'importation se fasse depuis ce dossier)
-# ha oui yavait le truc des IDs tout ça.
-
-data = {
-    "dataset": 1,
-    "entites": [
-        {
-            "id": 1,
-            "classe": "lieu",
-            "nom": "chemin du saule",
-        },
-        {
-            "id": 2,
-            "classe": "arbre",
-            "nom": "le joli saule",
-            "lueur": 0.4,
-            "est_magique": None,
-            "paroles": {"depuis": "lors"},
-        },
-    ],
-    "relations": [{"sujet": 1, "objet": 2, "type": "passe à côté de"}],
-}
-
-import orjson
-
-# ou alors je fais ça plus tard?
-def table_val_from_datatype(val):
-    if isinstance(val, str):
-        return 'texte'
-    elif isinstance(val, int):
-        return 'prop_int'
-    elif isinstance(val, float):
-        return 'prop_float'
-    elif not val:
-        return 'propriete'
-    elif isinstance(val, (dict, list, tuple)):
-        return 'prop_jsonb'
-    return 'prop_jsonb'
-
-
-def numerise_entite(entite, dataset):
-    """Prépare un dict décrivant une entité.
-
-    Args:
-        entite (dict):  le dictionnaire décrivant l'entité.
-        dataset (int):  l'identifiant du dataset.
-
-    Returns (dict):  un nouveau dict, avec des foreign keys.
-    """
-
-    id_dataset = entite.pop("id")
-    classe = entite.pop("classe")
-    proprietes = [
-        {"type": lookup_type_propriete[k], "val": entite[k]}
-        for k in entite
-    ]
-    key = lookup_import.Key(
-        **{"dataset": dataset, "id_dataset": id_dataset}
-    )
-    d = {
-        "classe": lookup_classe[classe],
-        "id": lookup_import[key],
-        "proprietes": proprietes,
-    }
-    return d
-
-
-numerise_entite(data['entites'][0], data['dataset'])
-
-def numerise_relation(relation):
-
-
-lookup_import.Key._fields
-
-key = lookup_import.Key(**{"dataset": 1, "id_dataset": 10})
-
-# ok alors j'ai besoin
-
-
-{"a": 1}.pop("b")  # key error
 
 cur_get = conn.cursor()
 cur_send = conn.cursor()
 
-# for row in cur_get.execute("select j from import._data"):
+sql_get = SQL("select * from {}").format(qualify(DATA_TABLE))
+data = (i[0] for i in cur_get.execute(sql_get))
 
-data = data
-entites = data["entites"]
-for ent in entites:
-    classe = ent["classe"]
+sql_copy = make_copy_stmt(DATA_TEMP_TABLE, DATA_TEMP_COLUMNS)
 
-# ajouter les classes:
-# with cur_send.copy("copy ") as copy:
-#     copy('...')
+with cur_send.copy(sql_copy) as copy:
+    for d in data:
+        num = numerise(d, lookup_entite=lookup_entite)
+        row = [num[i] for i in DATA_TEMP_COLUMNS]
+        copy.write_row([json.dumps(i) for i in row])
+
+lookup_classe.copy_to()
+lookup_type_relation.copy_to()
+lookup_type_propriete.copy_to()
+
+
+# def copy_entite(conn):
+
+cur_send = conn.cursor()
+cur_get = conn.cursor()
+columns = ["id", "classe"]
+copy_sql = make_copy_stmt("entite", columns)
+sql_get = SQL("select {} from {}").format(
+    Identifier("entites"), Identifier(DATA_TEMP_TABLE)
+)
+data = cur_get.execute(sql_get)
+with cur_send.copy(copy_sql) as copy:
+    for row in data:
+        for e in row:
+            print(e)
+
+            copy.write_row([e[i] for i in columns])
+
+
+# def copy_entite(conn):
+#     table = "public.entite"
+#     columns = ("id", "classe")
+#     copy(conn, table, columns)
+
+
+def copy_entite(conn):
+    cur_send = conn.cursor()
+    cur_get = conn.cursor()
+    numdata = (i[0] for i in cur_get.execute("select entites from {}"))
+    with cur_send.copy("copy entite (id, classe) from stdin") as copy:
+        for entites in num:
+            for e in entites:
+                copy.write_row(e["id"], e["classe"])
+
+
+list(lookup_classe.as_tuples())
+
+lookup_classe.copy_to()
+
+
+# cur_send.executemany(
+#     "insert into entite (id, classe) select %s, %s",
+#     [(i["id"], i["classe"]) for i in entites],
+# )
+
+
+list(cur_send.execute("select * from entite"))
+
+list(cur_get.execute("select * from classe"))
+
+lookup_classe.copy_to()
+
+lookup_type_propriete.copy_to()
+lookup_type_relation.copy_to()
+
+list(lookup_classe.conn.execute("select * from onto.classe"))
+
+list(
+    lookup_type_relation.conn.execute(
+        "select * from onto.type_relation"
+    )
+)
+
+# mhhhh ya KED
+
+list(lookup_classe.conn.execute("select * from onto.type_propriete"))
+
+
+list(conn.execute("select * from " + DATA_TEMP_TABLE))
+
+lookup_entite.copy_to()  # pas public.entite, mais import._lookup_entite!!!
+
+lookup_classe.copy_to()
+conn.commit()
+
+lookup_type_relation.copy_to()
+lookup_type_propriete.copy_to()
+
+sql_copy = SQL("select {} from {}").format()
+# with cur_get.copy()
+
+# for column,
+
+conn.execute("select id, classe from entite")
+
+list(conn.execute("select * from import._lookup_entite"))
 
 conn.close()
