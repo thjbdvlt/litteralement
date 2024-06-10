@@ -1,5 +1,6 @@
 import json
 import tqdm
+import litteralement.nlp.row_insertions
 
 
 def todict(
@@ -81,6 +82,7 @@ def annoter(
     batch_size=1000,
     n_process=2,
     isword=lambda token: token._.tokentype == "word",
+    noinsert=False,
     **kwargs,
 ):
     """Annoter des textes et les insérer dans la base de données.
@@ -130,4 +132,9 @@ def annoter(
         for i in tqdm.tqdm(todb):
             copy.write_row(i)
 
+    # commit les changements
     conn.commit()
+
+    # si le paramètre noinsert est False (défaut), les données sont automatiquement insérées dans les tables.
+    if noinsert is False:
+        litteralement.nlp.row_insertions.inserer(conn)

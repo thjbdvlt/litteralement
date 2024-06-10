@@ -238,14 +238,12 @@ def _insert_toutes_proprietes(conn):
             _insert_une_propriete(cur_send, d)
 
 
-def importer(dbname="litteralement"):
+def importer(conn):
     """Insère dans les tables EAV ce qui se trouve dans import._data.
 
     Args:
         dbname (str)
     """
-
-    conn = psycopg.connect(dbname=dbname)
 
     _create_data_temp_table(conn)
 
@@ -306,4 +304,3 @@ def importer(dbname="litteralement"):
 
     # fin de la fonction: commit et terminer la connexion.
     conn.commit()
-    conn.close()

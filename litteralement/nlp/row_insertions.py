@@ -71,11 +71,8 @@ def _copy_phrase(conn):
     _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
 
 
-def inserer(dbname="litteralement"):
+def inserer(conn):
     """Ajoute les import._documents dans les tables."""
-
-    # connection
-    conn = psycopg.connect(dbname=dbname)
 
     # créer des tables lookups pour les ids.
     lookup_lemma = DatabaseLookup(conn, "nlp.lemme", colname="graphie")
