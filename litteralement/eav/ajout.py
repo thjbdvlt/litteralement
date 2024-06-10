@@ -175,7 +175,7 @@ def _numerise_row(data, **kwargs):
     ]
 
     # récupère les relations incomplète dans les entités.
-    for i in data["entites"]:
+    for i in entites:
         if "relations" in i:
             relations.extend(i.pop("relations"))
 
@@ -373,6 +373,9 @@ def importer(conn):
     _copy_entites(conn)
     _copy_relations(conn)
     _insert_toutes_proprietes(conn)
+
+    # drop la table avec les données.
+    conn.execute(SQL("truncate {}").format(qualify(DATA_TABLE)))
 
     # fin de la fonction: commit et terminer la connexion.
     conn.commit()
