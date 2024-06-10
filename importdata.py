@@ -24,7 +24,7 @@ curval = conn.execute("select nextval('entite_id_seq')").fetchone()[0]
 lookup_entite = MultiColumnLookup(
     conn=conn,
     colid="id_entite",
-    columns=["dataset", "id_dataset"],
+    columns=("dataset", "id_dataset"),
     table="import._lookup_entite",
     start_id=curval,
 )
@@ -59,15 +59,13 @@ lookup_type_propriete.copy_to()
 copy_entites(conn)
 copy_relations(conn)
 
-copy_proprietes(conn)
+# copy_proprietes(conn)
 
+
+# des tests
 list(conn.execute("select * from entite"))
-
 list(conn.execute("select * from relation"))
-
 list(conn.execute("select * from type_relation"))
-
-conn.execute("truncate entite cascade")
 
 
 conn.close()

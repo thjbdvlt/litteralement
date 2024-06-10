@@ -23,33 +23,6 @@ def create_data_temp_table(conn):
     conn.execute(sql)
 
 
-def table_val_from_datatype(val):
-    """Retourne le nom de la table correspondant au datatype.
-
-    Args:
-        val (Any):  la valeur.
-
-    Returns (str):  le nom de la table.
-    """
-
-    if isinstance(val, str):
-        return "texte"
-
-    elif isinstance(val, int):
-        return "prop_int"
-
-    elif isinstance(val, float):
-        return "prop_float"
-
-    elif not val:
-        return "propriete"
-
-    elif isinstance(val, (dict, list, tuple)):
-        return "prop_jsonb"
-
-    return "prop_jsonb"
-
-
 def numerise_entite(
     entite,
     dataset,
@@ -116,6 +89,33 @@ def numerise_relation(
     return d
 
 
+def table_val_from_datatype(val):
+    """Retourne le nom de la table correspondant au datatype.
+
+    Args:
+        val (Any):  la valeur.
+
+    Returns (str):  le nom de la table.
+    """
+
+    if isinstance(val, str):
+        return "texte"
+
+    elif isinstance(val, int):
+        return "prop_int"
+
+    elif isinstance(val, float):
+        return "prop_float"
+
+    elif not val:
+        return "propriete"
+
+    elif isinstance(val, (dict, list, tuple)):
+        return "prop_jsonb"
+
+    return "prop_jsonb"
+
+
 def insert_propriete(propriete):
     """Insère une propriété.
 
@@ -178,7 +178,7 @@ def copy_entites(conn):
         conn (Connection)
     """
 
-    columns = ["id", "classe"]
+    columns = ("id", "classe")
     source_column = "entites"
     table = "entite"
     copy_from_temp(conn, table, columns, source_column)
@@ -191,7 +191,7 @@ def copy_relations(conn):
         conn (Connection)
     """
 
-    columns = ["type", "sujet", "objet"]
+    columns = ("type", "sujet", "objet")
     source_column = "relations"
     table = "relation"
     copy_from_temp(conn, table, columns, source_column)
