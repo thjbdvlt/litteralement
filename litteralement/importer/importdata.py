@@ -129,7 +129,7 @@ def insert_propriete(propriete):
     return query
 
 
-def numerise(data, **kwargs):
+def numerise_row(data, **kwargs):
     """Numerise un ensemble de données (entités et relations).
 
     Args:
@@ -157,6 +157,20 @@ def numerise(data, **kwargs):
     return d
 
 
+def copy_from_temp(conn, table, columns, source_column):
+    cur_send = conn.cursor()
+    cur_get = conn.cursor()
+    copy_sql = make_copy_stmt(table, columns)
+    sql_get = SQL("select distinct {} from {}").format(
+        Identifier(source_column), Identifier(DATA_TEMP_TABLE)
+    )
+    data = (i[0] for i in cur_get.execute(sql_get))
+    with cur_send.copy(copy_sql) as copy:
+        for row in data:
+            for e in row:
+                copy.write_row([e[i] for i in columns])
+
+
 def copy_entites(conn):
     """Copie les entités depuis la table temporaire.
 
@@ -164,15 +178,20 @@ def copy_entites(conn):
         conn (Connection)
     """
 
-    cur_send = conn.cursor()
-    cur_get = conn.cursor()
     columns = ["id", "classe"]
-    copy_sql = make_copy_stmt("entite", columns)
-    sql_get = SQL("select distinct {} from {}").format(
-        Identifier("entites"), Identifier(DATA_TEMP_TABLE)
-    )
-    data = (i[0] for i in cur_get.execute(sql_get))
-    with cur_send.copy(copy_sql) as copy:
-        for row in data:
-            for e in row:
-                copy.write_row([e[i] for i in columns])
+    source_column = "entites"
+    table = "entite"
+    copy_from_temp(conn, table, columns, source_column)
+
+
+def copy_relations(conn):
+    """Copie les entités depuis la table temporaire.
+
+    Args:
+        conn (Connection)
+    """
+
+    columns = ["type", "sujet", "objet"]
+    source_column = "relations"
+    table = "relation"
+    copy_from_temp(conn, table, columns, source_column)

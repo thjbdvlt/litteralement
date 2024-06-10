@@ -5,12 +5,14 @@ from litteralement.lookups.database import TryDatabaseLookup
 from litteralement.lookups.database import MultiColumnLookup
 from litteralement.statements import qualify
 from litteralement.statements import make_copy_stmt
-from litteralement.importer.importdata import numerise
+from litteralement.importer.importdata import numerise_row
 from litteralement.importer.importdata import create_data_temp_table
 from litteralement.importer.importdata import DATA_TEMP_TABLE
 from litteralement.importer.importdata import DATA_TABLE
 from litteralement.importer.importdata import DATA_TEMP_COLUMNS
 from litteralement.importer.importdata import copy_entites
+from litteralement.importer.importdata import copy_relations
+# from litteralement.importer.importdata import copy_proprietes
 
 
 dbname = "litteralement"
@@ -40,7 +42,7 @@ sql_copy = make_copy_stmt(DATA_TEMP_TABLE, DATA_TEMP_COLUMNS)
 
 with cur_send.copy(sql_copy) as copy:
     for d in data:
-        num = numerise(
+        num = numerise_row(
             d,
             lookup_entite=lookup_entite,
             lookup_classe=lookup_classe,
@@ -55,73 +57,17 @@ lookup_type_relation.copy_to()
 lookup_type_propriete.copy_to()
 
 copy_entites(conn)
+copy_relations(conn)
 
-# def copy_entite(conn):
-#     table = "public.entite"
-#     columns = ("id", "classe")
-#     copy(conn, table, columns)
+copy_proprietes(conn)
 
+list(conn.execute("select * from entite"))
 
-def copy_entite(conn):
-    cur_send = conn.cursor()
-    cur_get = conn.cursor()
-    numdata = (i[0] for i in cur_get.execute("select entites from {}"))
-    with cur_send.copy("copy entite (id, classe) from stdin") as copy:
-        for entites in num:
-            for e in entites:
-                copy.write_row(e["id"], e["classe"])
+list(conn.execute("select * from relation"))
 
+list(conn.execute("select * from type_relation"))
 
-list(lookup_classe.as_tuples())
+conn.execute("truncate entite cascade")
 
-lookup_classe.copy_to()
-
-
-# cur_send.executemany(
-#     "insert into entite (id, classe) select %s, %s",
-#     [(i["id"], i["classe"]) for i in entites],
-# )
-
-
-list(cur_send.execute("select * from entite"))
-
-list(cur_get.execute("select * from classe"))
-
-lookup_classe.copy_to()
-
-lookup_type_propriete.copy_to()
-lookup_type_relation.copy_to()
-
-list(lookup_classe.conn.execute("select * from onto.classe"))
-
-list(
-    lookup_type_relation.conn.execute(
-        "select * from onto.type_relation"
-    )
-)
-
-# mhhhh ya KED
-
-list(lookup_classe.conn.execute("select * from onto.type_propriete"))
-
-
-list(conn.execute("select * from " + DATA_TEMP_TABLE))
-
-lookup_entite.copy_to()  # pas public.entite, mais import._lookup_entite!!!
-
-lookup_classe.copy_to()
-conn.commit()
-
-lookup_type_relation.copy_to()
-lookup_type_propriete.copy_to()
-
-sql_copy = SQL("select {} from {}").format()
-# with cur_get.copy()
-
-# for column,
-
-conn.execute("select id, classe from entite")
-
-list(conn.execute("select * from import._lookup_entite"))
 
 conn.close()
