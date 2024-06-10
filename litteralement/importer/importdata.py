@@ -1,5 +1,6 @@
 from psycopg.sql import SQL, Identifier
 from litteralement.statements import make_copy_stmt
+import json
 
 
 DATA_TABLE = "import._data"
@@ -116,19 +117,6 @@ def table_val_from_datatype(val):
     return "prop_jsonb"
 
 
-def insert_propriete(propriete):
-    """Insère une propriété.
-
-    Args:
-        propriete (dict)
-    """
-
-    table = table_val_from_datatype(propriete["val"])
-    base_stmt = "insert into {} ({}) values %s"
-    query = SQL(base_stmt).format(Identifier(table))
-    return query
-
-
 def numerise_row(data, **kwargs):
     """Numerise un ensemble de données (entités et relations).
 
@@ -206,7 +194,7 @@ def copy_relations(conn):
     copy_from_temp(conn, table, columns, source_column)
 
 
-def insert_propriete(cursor, d):
+def insert_une_propriete(cursor, d):
     """Construit un INSERT statement en fonction du type de données.
 
     Args:
@@ -221,10 +209,27 @@ def insert_propriete(cursor, d):
         if table == "propriete"
         else ("entite", "type", "val")
     )
+    if table == 'prop_jsonb':
+        d['val'] = json.dumps(d['val'])
     placeholders = ", ".join(["%s" for i in columns])
-    stmt = "insert into {} ({}) values {}"
+    stmt = f"insert into {{}} ({{}}) select {placeholders}"
     sql_table = Identifier(table)
-    sql_columns = [Identifier(i) for i in columns]
-    stmt = SQL(stmt).format(sql_table, sql_columns, placeholders)
+    sql_columns = SQL(", ").join([Identifier(i) for i in columns])
+    sql_stmt = SQL(stmt).format(sql_table, sql_columns)
     row = [d[i] for i in columns]
-    cursor.execute(stmt, row)
+    cursor.execute(sql_stmt, row)
+
+
+def insert_toutes_proprietes(conn):
+    """Insère toutes les propriétés depuis la TEMP TABLE.
+
+    Args:
+        conn (Connection)
+    """
+    sql_get = "select distinct proprietes from " + DATA_TEMP_TABLE
+    data = (i[0] for i in conn.execute(sql_get))
+    cur_send = conn.cursor()
+    for row_source in data:
+        for d in row_source:
+            insert_une_propriete(cur_send, d)
+

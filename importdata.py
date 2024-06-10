@@ -1,6 +1,6 @@
 import psycopg
 import json
-from psycopg.sql import SQL, Identifier
+from psycopg.sql import SQL
 from litteralement.lookups.database import TryDatabaseLookup
 from litteralement.lookups.database import MultiColumnLookup
 from litteralement.statements import qualify
@@ -9,11 +9,10 @@ from litteralement.importer.importdata import numerise_row
 from litteralement.importer.importdata import create_data_temp_table
 from litteralement.importer.importdata import copy_entites
 from litteralement.importer.importdata import copy_relations
-from litteralement.importer.importdata import insert_property
+from litteralement.importer.importdata import insert_toutes_proprietes
 from litteralement.importer.importdata import DATA_TEMP_TABLE
 from litteralement.importer.importdata import DATA_TABLE
 from litteralement.importer.importdata import DATA_TEMP_COLUMNS
-# from litteralement.importer.importdata import copy_proprietes
 
 
 dbname = "litteralement"
@@ -36,7 +35,7 @@ lookup_type_propriete = TryDatabaseLookup(conn, "onto.type_propriete")
 cur_get = conn.cursor()
 cur_send = conn.cursor()
 
-sql_get = SQL("select * from {}").format(qualify(DATA_TABLE))
+sql_get = SQL("select j from {}").format(qualify(DATA_TABLE))
 data = (i[0] for i in cur_get.execute(sql_get))
 
 sql_copy = make_copy_stmt(DATA_TEMP_TABLE, DATA_TEMP_COLUMNS)
@@ -56,27 +55,11 @@ with cur_send.copy(sql_copy) as copy:
 lookup_classe.copy_to()
 lookup_type_relation.copy_to()
 lookup_type_propriete.copy_to()
+lookup_entite.copy_to()
 
 copy_entites(conn)
 copy_relations(conn)
+insert_toutes_proprietes(conn)
 
-# copy_proprietes(conn)
-sql_get = "select distinct proprietes from " + DATA_TEMP_TABLE
-data = (i[0] for i in conn.execute(sql_get))
-for row_source in data:
-    for d in row_source:
-        stmt, row = insert_property(d)
-        cur_send.execute(
-            stmt,
-        )
-
-
-# des tests
-list(conn.execute("select * from entite"))
-
-list(conn.execute("select * from relation"))
-
-list(conn.execute("select * from type_relation"))
-
-
+conn.commit()
 conn.close()

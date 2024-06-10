@@ -38,7 +38,7 @@ create table public.relation (
 
 create table public.propriete (
     -- pour les propriétés qui ne nécessite aucune valeur, par exemple 'is_fictional'.
-    type smallint references onto.type_propriete(id),
+    type smallint references onto.type_propriete(id) not null,
     entite int references public.entite(id) not null
 );
 -- 1.2.1. les propriétés qui nécessitent des valeurs ont, pour chaque datatype, une table correspondante, qui hérite de la table propriété.
@@ -46,6 +46,7 @@ create table public.prop_text (val text) inherits (public.propriete);
 create table public.prop_int (val int) inherits (public.propriete);
 create table public.prop_float (val float) inherits (public.propriete);
 create table public.prop_date (val timestamp) inherits (public.propriete);
+create table public.prop_jsonb (val jsonb) inherits (public.propriete);
 
 -- 1.3. la table qui fait la liaison entre les deux parties de la base de données (EAV et relationnel standard) est la table texte.
 

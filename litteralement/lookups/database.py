@@ -196,6 +196,6 @@ class MultiColumnLookup(ComposedKeyLookup):
     def _copy_stmt(self):
         stmt = litteralement.statements.copy_to_multicolumns(
             table=self.table,
-            columns=(self.colid) + tuple(self.columns),
+            columns=(self.colid,) + tuple(self.columns),
         )
         return stmt
