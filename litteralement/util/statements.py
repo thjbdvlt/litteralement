@@ -2,7 +2,13 @@ from psycopg.sql import SQL, Identifier
 
 
 def qualify(table):
-    """Nom de table et schéma si inclut."""
+    """Nom de table et schéma si inclut.
+
+    Args:
+        table (str)
+
+    Return (Identifier)
+    """
 
     if not isinstance(table, str):
         return Identifier(*table)

@@ -1,7 +1,7 @@
 import json
 import psycopg
 from psycopg.sql import SQL
-import litteralement.statements
+import litteralement.util.statements
 from litteralement.lookups.database import DatabaseLookup
 from litteralement.lookups.database import TryDatabaseLookup
 from litteralement.lookups.database import MultiColumnLookup
@@ -25,7 +25,7 @@ def _copy_from_temp(conn, table, key, columns):
     sql_get = SQL("select id, j from _temp_doc")
 
     # construire la requête pour envoyer avec colonnes multiples.
-    sql_copy_send = litteralement.statements.copy_to_multicolumns(
+    sql_copy_send = litteralement.util.statements.copy_to_multicolumns(
         table=table,
         columns=["texte"] + columns,
     )

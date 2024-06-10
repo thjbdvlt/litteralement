@@ -1,6 +1,6 @@
 import json
-import tqdm
 import litteralement.nlp.row_insertions
+from tqdm import tqdm
 
 
 def todict(
@@ -83,6 +83,7 @@ def annoter(
     n_process=2,
     isword=lambda token: token._.tokentype == "word",
     noinsert=False,
+    progress_item_number=200,
     **kwargs,
 ):
     """Annoter des textes et les insérer dans la base de données.
@@ -113,24 +114,17 @@ def annoter(
         n_process=n_process,
     )
 
-    # construire des dicts
-    docs = map(
-        lambda i: (
-            todict(i[0], isword=isword, **kwargs),
-            i[1]["id"],
-        ),
-        docs,
-    )
-
-    # sérialiser en JSON
-    todb = map(lambda i: (json.dumps(i[0]), i[1]), docs)
-
     # placer les documents dans la table import._document (la méthode 'COPY' est beaucoup plus rapide qu'une insertion normale).
+    n = 0
+    print("début de l'annotation")
     with cur_send.copy(
         "COPY import._document (j, id) FROM STDIN"
     ) as copy:
-        for i in tqdm.tqdm(todb):
-            copy.write_row(i)
+        for i in tqdm(docs):
+            n += 1
+            doc = todict(i[0], isword=isword, **kwargs)
+            row = (json.dumps(doc)), i[1]["id"]
+            copy.write_row(row)
 
     # commit les changements
     conn.commit()

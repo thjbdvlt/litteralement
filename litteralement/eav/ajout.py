@@ -1,8 +1,8 @@
 import psycopg
 import json
 from psycopg.sql import SQL, Identifier
-from litteralement.statements import make_copy_stmt
-from litteralement.statements import qualify
+from litteralement.util.statements import make_copy_stmt
+from litteralement.util.statements import qualify
 from litteralement.lookups.database import TryDatabaseLookup
 from litteralement.lookups.database import MultiColumnLookup
 

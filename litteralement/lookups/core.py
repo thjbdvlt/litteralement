@@ -1,5 +1,5 @@
 from typing import NamedTuple, Any
-import litteralement.seq
+import litteralement.lookups.seq
 
 
 class Lookup:
@@ -29,7 +29,7 @@ class Lookup:
             raise ValueError("initial values must be unique.")
 
         self.d = d
-        self.seq = litteralement.seq.Seq(start=start_id)
+        self.seq = litteralement.lookups.seq.Seq(start=start_id)
         self.ersatz = set()
         self._update_sequence()
 

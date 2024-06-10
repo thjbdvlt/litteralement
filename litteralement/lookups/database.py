@@ -2,7 +2,7 @@ from psycopg.sql import SQL, Identifier
 from litteralement.lookups.core import Lookup
 from litteralement.lookups.core import TryLookup
 from litteralement.lookups.core import ComposedKeyLookup
-import litteralement.statements
+import litteralement.util.statements
 
 
 def _get_binary_lookup(
@@ -24,7 +24,7 @@ def _get_binary_lookup(
     Returns (Lookup, TryLookup)
     """
 
-    sql_table = litteralement.statements.qualify(table)
+    sql_table = litteralement.util.statements.qualify(table)
     query = SQL("select {}, {} from {}").format(
         Identifier(colid), Identifier(colname), sql_table
     )
@@ -54,7 +54,7 @@ def _get_multicolumn_lookup(
     Returns (Lookup)
     """
 
-    query = litteralement.statements.make_multi_column_select(
+    query = litteralement.util.statements.make_multi_column_select(
         table=table, columns=(colid,) + tuple(columns)
     )
     cur = conn.cursor()
@@ -125,7 +125,7 @@ class DatabaseLookup(Lookup):
         """Construit un statement COPY."""
 
         stmt = SQL("copy {} (id, {}) from stdin").format(
-            litteralement.statements.qualify(self.table),
+            litteralement.util.statements.qualify(self.table),
             Identifier(self.colname),
         )
         return stmt
@@ -194,7 +194,7 @@ class MultiColumnLookup(ComposedKeyLookup):
 
     @property
     def _copy_stmt(self):
-        stmt = litteralement.statements.copy_to_multicolumns(
+        stmt = litteralement.util.statements.copy_to_multicolumns(
             table=self.table,
             columns=(self.colid,) + tuple(self.columns),
         )
