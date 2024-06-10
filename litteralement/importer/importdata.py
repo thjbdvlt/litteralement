@@ -1,4 +1,5 @@
 from psycopg.sql import SQL, Identifier
+from litteralement.statements import make_copy_stmt
 
 
 DATA_TABLE = "import._data"
@@ -154,3 +155,24 @@ def numerise(data, **kwargs):
         "proprietes": proprietes,
     }
     return d
+
+
+def copy_entites(conn):
+    """Copie les entités depuis la table temporaire.
+
+    Args:
+        conn (Connection)
+    """
+
+    cur_send = conn.cursor()
+    cur_get = conn.cursor()
+    columns = ["id", "classe"]
+    copy_sql = make_copy_stmt("entite", columns)
+    sql_get = SQL("select distinct {} from {}").format(
+        Identifier("entites"), Identifier(DATA_TEMP_TABLE)
+    )
+    data = (i[0] for i in cur_get.execute(sql_get))
+    with cur_send.copy(copy_sql) as copy:
+        for row in data:
+            for e in row:
+                copy.write_row([e[i] for i in columns])

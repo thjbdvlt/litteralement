@@ -10,6 +10,7 @@ from litteralement.importer.importdata import create_data_temp_table
 from litteralement.importer.importdata import DATA_TEMP_TABLE
 from litteralement.importer.importdata import DATA_TABLE
 from litteralement.importer.importdata import DATA_TEMP_COLUMNS
+from litteralement.importer.importdata import copy_entites
 
 
 dbname = "litteralement"
@@ -29,7 +30,6 @@ lookup_classe = TryDatabaseLookup(conn, "onto.classe")
 lookup_type_relation = TryDatabaseLookup(conn, "onto.type_relation")
 lookup_type_propriete = TryDatabaseLookup(conn, "onto.type_propriete")
 
-
 cur_get = conn.cursor()
 cur_send = conn.cursor()
 
@@ -40,7 +40,13 @@ sql_copy = make_copy_stmt(DATA_TEMP_TABLE, DATA_TEMP_COLUMNS)
 
 with cur_send.copy(sql_copy) as copy:
     for d in data:
-        num = numerise(d, lookup_entite=lookup_entite)
+        num = numerise(
+            d,
+            lookup_entite=lookup_entite,
+            lookup_classe=lookup_classe,
+            lookup_type_relation=lookup_type_relation,
+            lookup_type_propriete=lookup_type_propriete,
+        )
         row = [num[i] for i in DATA_TEMP_COLUMNS]
         copy.write_row([json.dumps(i) for i in row])
 
@@ -48,24 +54,7 @@ lookup_classe.copy_to()
 lookup_type_relation.copy_to()
 lookup_type_propriete.copy_to()
 
-
-# def copy_entite(conn):
-
-cur_send = conn.cursor()
-cur_get = conn.cursor()
-columns = ["id", "classe"]
-copy_sql = make_copy_stmt("entite", columns)
-sql_get = SQL("select {} from {}").format(
-    Identifier("entites"), Identifier(DATA_TEMP_TABLE)
-)
-data = cur_get.execute(sql_get)
-with cur_send.copy(copy_sql) as copy:
-    for row in data:
-        for e in row:
-            print(e)
-
-            copy.write_row([e[i] for i in columns])
-
+copy_entites(conn)
 
 # def copy_entite(conn):
 #     table = "public.entite"
