@@ -20,3 +20,4 @@ test:
 	psql -c 'create database $(dbname)'
 	psql $(dbname) < ./schema/tables.sql
 	$(_py) ./test.py
+

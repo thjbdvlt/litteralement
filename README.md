@@ -81,7 +81,7 @@ import litteralement.eav.ajout
 
 dbname = "litteralement"
 conn = psycopg.connect(dbname=dbname)
-litteralement.eav.importer(conn)
+litteralement.eav.ajout.importer(conn)
 ```
 
 annoter
@@ -89,7 +89,7 @@ annoter
 
 ```python
 import psycopg
-import litteralement.eav.ajout
+import litteralement.nlp.text_annotation
 import spacy
 
 dbname = "litteralement"
