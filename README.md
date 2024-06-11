@@ -1,9 +1,9 @@
 littéralement
 =============
 
-__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) conçu pour l'analyse de texte en français et construit selon un modèle générique (EAV[^1]) hybride.
+__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) conçu pour l'analyse de texte en français et construit selon un modèle générique (EAV) hybride.
 
-le modèle générique que j'utilise comme base[^1] est complet que ce que désigne le terme "[EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model)" (Entity-Attribute-Value), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi les relations entre les entités.
+le modèle générique que j'utilise comme base[^1] est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi (notamment) les relations entre les entités.
 
 modèle EAV hybride
 ------------------
@@ -15,4 +15,4 @@ modèle EAV hybride
 [^2]: il est particulièrement utile si l'on ne sait pas, au départ d'une recherche, ce qu'on va exactement collecter et la manière dont on va organiser le résultat de notre collecte (ou de nos analyses), ou la manière dont les objets de notre recherche peuvent se connecter par l'analyse.
 [^3]: on évite par exemple de surcharger la table "entité" avec des millions de mots.
 
-![schéma](./diagram/diagram.dot.png)
+![schéma](./diagram/diagram.dot.svg)
