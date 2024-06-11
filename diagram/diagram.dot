@@ -1,17 +1,18 @@
 digraph {
     {rank=same; classe; type_relation; type_propriete; nature; fonction; morph}
     {rank=same; segment;token; phrase; mot}
-    {rank=same; texte; prop_int; prop_date; prop_float}
+    {rank=same; texte; prop_date; prop_float}
+    {rank=same; texte_val; prop_date_val; prop_float_val}
 
     concept [color=orange fontcolor=orange shape=box]
-    type_propriete [shape=box color=skyblue fontcolor=skyblue]
-    type_relation [shape=box color=skyblue fontcolor=skyblue]
-    classe [shape=box color=skyblue fontcolor=skyblue]
+    type_propriete [shape=box color=turquoise fontcolor=turquoise]
+    type_relation [shape=box color=turquoise fontcolor=turquoise]
+    classe [shape=box color=turquoise fontcolor=turquoise]
 
-    fonction [shape=box color=black fontcolor=black]
-    nature [shape=box color=black fontcolor=black]
-    morph [shape=box color=black fontcolor=black]
-    lemme [shape=box color=black fontcolor=black]
+    fonction [shape=box color=violet fontcolor=violet]
+    nature [shape=box color=violet fontcolor=violet]
+    morph [shape=box color=violet fontcolor=violet]
+    lemme [shape=box color=violet fontcolor=violet]
 
     entite [shape=box color=blue fontcolor=blue]
     propriete [shape=box color=blue fontcolor=blue]
@@ -22,49 +23,48 @@ digraph {
     segment [shape=box color=black fontcolor=black]
     phrase [shape=box color=black fontcolor=black]
 
-    texte [shape=box color=skyblue fontcolor=skyblue]
-    prop_int [shape=box color=skyblue fontcolor=skyblue]
-    prop_float [shape=box color=skyblue fontcolor=skyblue]
-    prop_date [shape=box color=skyblue fontcolor=skyblue]
+    texte [shape=box color=blue fontcolor=blue]
+    prop_float [shape=box color=blue fontcolor=blue]
+    prop_date [shape=box color=blue fontcolor=blue]
 
-    lexeme [shape=box color=black fontcolor=black]
+    lexeme [shape=box color=violet fontcolor=violet]
 
+    type_relation -> concept [style=dotted arrowhead=empty color=orange]
+    type_propriete -> concept [style=dotted arrowhead=empty color=orange]
+    classe -> concept [style=dotted arrowhead=empty color=orange]
 
-    type_relation -> concept [style=dashed arrowhead=empty color=skyblue]
-    type_propriete -> concept [style=dashed arrowhead=empty color=skyblue]
-    classe -> concept [style=dashed arrowhead=empty color=skyblue]
+    nature -> concept [style=dotted arrowhead=empty color=orange]
+    fonction -> concept [style=dotted arrowhead=empty color=orange]
+    morph -> concept [style=dotted arrowhead=empty color=orange]
+    lemme -> concept [style=dotted arrowhead=empty color=orange]
 
-    nature -> concept [style=dashed arrowhead=empty color=black]
-    fonction -> concept [style=dashed arrowhead=empty color=black]
-    morph -> concept [style=dashed arrowhead=empty color=black]
-    lemme -> concept [style=dashed arrowhead=empty color=black]
+    relation -> entite [label=sujet color=blue fontcolor=blue fontsize=10]
+    relation -> entite [label=objet color=blue fontcolor=blue fontsize=10]
+    propriete -> entite [label=qualifie color=blue fontcolor=blue fontsize=10]
+    propriete -> texte [style=dashed dir=back arrowtail=empty color=blue]
 
-    relation -> entite [label=sujet color=blue fontcolor=blue]
-    relation -> entite [label=objet color=blue fontcolor=blue]
-    propriete -> entite [label=qualifie color=blue fontcolor=blue]
-    propriete -> texte [style=dashed dir=back arrowtail=empty color=skyblue]
-    entite -> classe [label=instance_de color=skyblue fontcolor=skyblue]
-    relation -> type_relation [label=a color=skyblue fontcolor=skyblue]
-    propriete -> type_propriete [label=a color=skyblue fontcolor=skyblue]
+    entite -> classe [label=est_instance_de color=turquoise fontcolor=turquoise fontsize=10]
+    relation -> type_relation [label=a color=turquoise fontcolor=turquoise fontsize=10]
+    propriete -> type_propriete [label=a color=turquoise fontcolor=turquoise fontsize=10]
     
-    segment -> texte [label=est_dans color=black fontcolor=black]
+    segment -> texte [label=est_dans color=black fontcolor=black fontsize=10]
 
     phrase -> segment [style=dashed arrowhead=empty color=black]
     segment -> token [style=dashed dir=back arrowtail=empty color=black]
     token -> mot [style=dashed dir=back arrowtail=empty color=black]
 
-    mot -> fonction [label=a color=black fontcolor=black]
-    lexeme -> nature [label=a color=black fontcolor=black]
-    lexeme -> morph [label=a color=black fontcolor=black]
-    lexeme -> lemme [label=a color=black fontcolor=black]
-    mot -> lexeme [label=instance_de color=black fontcolor=black]
+    mot -> fonction [label=a color=violet fontcolor=violet fontsize=10]
+    lexeme -> nature [label=a color=violet fontcolor=violet fontsize=10]
+    lexeme -> morph [label=a color=violet fontcolor=violet fontsize=10]
+    lexeme -> lemme [label=a color=violet fontcolor=violet fontsize=10]
+    mot -> lexeme [label=est_instance_de color=violet fontcolor=violet fontsize=10]
 
-    prop_int -> propriete [style=dashed arrowhead=empty color=skyblue]
-    prop_float -> propriete [style=dashed arrowhead=empty color=skyblue]
-    prop_date -> propriete [style=dashed arrowhead=empty color=skyblue]
+    prop_float -> propriete [style=dashed arrowhead=empty color=blue]
+    prop_date -> propriete [style=dashed arrowhead=empty color=blue]
 
     // colonnes littérales
     concept_nom [label=nom fontsize=10 width=0.2 height=0.2 color=orange fontcolor=orange]
+    concept_definition [label=definition fontsize=10 width=0.2 height=0.2 color=orange fontcolor=orange]
     concept_id [label=id fontsize=10 width=0.2 height=0.2 color=orange fontcolor=orange]
 
     entite_id [label=id fontsize=10 width=0.2 height=0.2 color=blue fontcolor=blue]
@@ -73,10 +73,12 @@ digraph {
     segment_fin [label=fin fontsize=10 width=0.2 height=0.2 color=black fontcolor=black]
     token_num [label=fin fontsize=10 width=0.2 height=0.2 color=black fontcolor=black]
     mot_noyau [label=noyau fontsize=10 width=0.2 height=0.2 color=black fontcolor=black]
-    lexeme_id [label=id fontsize=10 width=0.2 height=0.2 color=black fontcolor=black]
-    lexeme_norme [label=norme fontsize=10 width=0.2 height=0.2 color=black fontcolor=black]
+
+    lexeme_id [label=id fontsize=10 width=0.2 height=0.2 color=violet fontcolor=violet]
+    lexeme_norme [label=norme fontsize=10 width=0.2 height=0.2 color=violet fontcolor=violet]
 
     concept -> concept_nom [dir=none color=orange]
+    concept -> concept_definition [dir=none color=orange]
     concept -> concept_id [dir=none color=orange]
 
     entite_id -> entite [dir=none color=blue]
@@ -85,7 +87,21 @@ digraph {
     segment_debut -> segment [dir=none color=black]
     token_num -> token [dir=none color=black]
     mot_noyau -> mot [dir=none color=black]
-    lexeme_id -> lexeme [dir=none color=black]
-    lexeme_norme -> lexeme [dir=none color=black]
+
+    lexeme_id -> lexeme [dir=none color=violet]
+    lexeme_norme -> lexeme [dir=none color=violet]
+
+    prop_float_val [label=val width=0.2 height=0.2 fontsize=10 color=blue fontcolor=blue]
+    prop_date_val [label=val width=0.2 height=0.2 fontsize=10 color=blue fontcolor=blue]
+    texte_val [label=val width=0.2 height=0.2 fontsize=10 color=blue fontcolor=blue]
+    texte_id [label=id width=0.2 height=0.2 fontsize=10 color=blue fontcolor=blue]
+
+    prop_float_val -> prop_float [color=blue dir=none]
+    prop_date_val -> prop_date [color=blue dir=none]
+    texte_val -> texte [color=blue dir=none]
+    texte_id -> texte [color=blue dir=none]
+
+    segment -> texte_val [color=none]
+    prop_float -> texte [color=none]
 
 }
