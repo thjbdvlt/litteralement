@@ -101,6 +101,7 @@ litteralement.nlp.text_annotation.annoter(
     conn,
     # la requête qui doit retourner les ID des textes, et les textes.
     # elle peut en revanche avoir n'importe quelle condition.
+    # pour annoter tous les textes pas encore annotés, passer 'all'.
     query="select id, val from texte",
     # le modèle de langue chargé par spacy.
     nlp=nlp,
