@@ -1,5 +1,5 @@
 digraph {
-    pad=4
+    pad=1
     {rank=same; classe; type_relation; type_propriete; nature; fonction; morph}
     {rank=same; segment;token; phrase; mot}
     {rank=same; texte; prop_date; prop_float}
