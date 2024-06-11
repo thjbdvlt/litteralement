@@ -92,5 +92,5 @@ import litteralement.eav.ajout
 
 dbname = "litteralement"
 conn = psycopg.connect(dbname=dbname)
-litteralement.eav.ajout(conn)
+litteralement.eav.importer(conn)
 ```
