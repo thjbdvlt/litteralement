@@ -1,5 +1,6 @@
 import json
 import litteralement.nlp.row_insertions
+import litteralement.util.statements
 from tqdm import tqdm
 
 
@@ -32,7 +33,7 @@ def todict(
 
     for token in doc:
         start_char = token.idx + 1
-        end_char = token.idx + len(token.text)
+        end_char = start_char + len(token.text)
         i = token.i
         d = {"debut": start_char, "fin": end_char, "num": i}
         d.update(add_token_attrs(token))
@@ -91,17 +92,22 @@ def annoter(
 
     Args:
         conn (Connection)
-        query (str):  SQL select qui doit retourner (id=int, val=text)
+        query (str):  SQL select qui doit retourner (id=int, val=text) ('all' pour tout annoter.)
         nlp (Language)
 
     Optionnel:
         batch_size (int)
         n_process (int)
+        isword (callable):  la fonction qui distingue les mots des autres tokens.
+        noinsert (bool):  ne pas insérer le résultat de l'annotation dans les tables.
     """
 
     # deux curseurs: il faut pouvoir envoyer tout en continuant de recevoir
     cur_get = conn.cursor()
     cur_send = conn.cursor()
+
+    if query == 'all':
+        query = litteralement.util.statements.UNANNOTATED_TEXTS
 
     # lance la requête qui SELECT les textes.
     cur_get.execute(query)
