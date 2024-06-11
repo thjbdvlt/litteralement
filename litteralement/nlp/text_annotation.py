@@ -55,7 +55,8 @@ def todict(
             nonwords.append(d)
 
     sents = [
-        {"debut": i.start_char + 1, "fin": i.end_char} for i in doc.sents
+        {"debut": i.start_char + 1, "fin": i.end_char}
+        for i in doc.sents
     ]
 
     spans = []

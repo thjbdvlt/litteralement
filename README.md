@@ -83,3 +83,14 @@ le seul champ requis est, dans chaque entité, le champ `classe`. le champ `id` 
 {"nom": 1.2}          # ira dans la table prop_float
 {"noms": {"prénom": "!", "nom": "?"}}  # ira dans la table prop_json
 ```
+
+l'importation se fait en ajoutant dans la table `import._data` des données au format décrit ci-dessus et en appelant la fonction `importer` qui se trouve dans le module `litteralement.eav.ajout`:
+
+```python
+import psycopg
+import litteralement.eav.ajout
+
+dbname = "litteralement"
+conn = psycopg.connect(dbname=dbname)
+litteralement.eav.ajout.importer()
+```
