@@ -106,7 +106,7 @@ def annoter(
     cur_get = conn.cursor()
     cur_send = conn.cursor()
 
-    if query == 'all':
+    if query == "all":
         query = litteralement.util.statements.UNANNOTATED_TEXTS
 
     # lance la requête qui SELECT les textes.
