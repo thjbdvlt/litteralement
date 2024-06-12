@@ -1,13 +1,17 @@
-"""create/drop des indexes à partir d'un csv."""
-
 import csv
 
 
 def get_idx_list(file=None):
-    """récupère la liste des indexes dansun csv.
+    """Récupère la liste des indexes dans un csv.
 
-    trois champs requis: table,column,group.
-    le header est optionnel (la fonction l'enlève s'il est là).
+    Args:
+        file (str):  chemin vers un fichier.
+
+    Returns (list[dict])
+
+    Format du CSV:
+        Trois champs requis: table,column,group.
+        Le header est optionnel (la fonction l'enlève s'il est là).
     """
 
     if file is None:
@@ -34,34 +38,48 @@ def get_idx_list(file=None):
 
 
 def create_index(conn, table, column) -> None:
-    """crée un index."""
+    """Crée un index.
+
+    Args:
+        conn (Connection)
+        table (str)
+        column (str)
+    """
 
     cur = conn.cursor()
     name = "_".join([table, column, "idx"])
     sql = f"create index {name} on {table} ({column})"
     cur.execute(sql)
-    return
 
 
 def drop_index(conn, table, column) -> None:
-    """drop un index."""
+    """Drop un index.
+    Args:
+        conn (Connection)
+        table (str)
+        column (str)
+    """
 
     cur = conn.cursor()
     name = "_".join([table, column, "idx"])
     sql = f"drop index {name}"
     cur.execute(sql)
-    return
 
 
 def filter_idxs(idxs, groups, tables):
-    """filtre les indexes à créer/drop."""
+    """Filtre les indexes à créer/drop.
+
+    Args:
+        idxs (list):  la liste des indexes
+        groups (list):  liste de groupes
+        tables (list):  liste de tables
+    """
 
     if len(groups) == len(tables) == 0:
         return idxs
     else:
-        [
+        return [
             i
             for i in idxs
             if i["group"] in groups or i["table"] in tables
         ]
-    return
