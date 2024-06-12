@@ -1,8 +1,6 @@
 """create/drop des indexes à partir d'un csv."""
 
-import psycopg
 import csv
-import argparse
 
 
 def get_idx_list(file=None):
@@ -35,18 +33,20 @@ def get_idx_list(file=None):
     return idx
 
 
-def create_index(cur, table, column) -> None:
+def create_index(conn, table, column) -> None:
     """crée un index."""
 
+    cur = conn.cursor()
     name = "_".join([table, column, "idx"])
     sql = f"create index {name} on {table} ({column})"
     cur.execute(sql)
     return
 
 
-def drop_index(cur, table, column) -> None:
+def drop_index(conn, table, column) -> None:
     """drop un index."""
 
+    cur = conn.cursor()
     name = "_".join([table, column, "idx"])
     sql = f"drop index {name}"
     cur.execute(sql)
@@ -65,72 +65,3 @@ def filter_idxs(idxs, groups, tables):
             if i["group"] in groups or i["table"] in tables
         ]
     return
-
-
-if __name__ == "__main":
-    # les arguments en ligne de commande
-    parser = argparse.ArgumentParser(
-        description=""""creer ou drop des indexes à partir d'un csv."""
-    )
-    parser.add_argument(
-        "-d",
-        "--drop",
-        help="drop les indexes au lieu de les créer",
-        type=bool,
-        default=False,
-    )
-    parser.add_argument(
-        "-g",
-        "--groups",
-        action="store",
-        type=list,
-        nargs="*",
-        help="les groupe d'index à créer/drop.",
-        default=[],
-    )
-    parser.add_argument(
-        "-f",
-        "--file",
-        action="store",
-        help="le fichier csv avec la liste d'index (table,column)",
-        type=str,
-        default="./indexes.csv",
-    )
-    parser.add_argument(
-        "-d",
-        "--dbname",
-        action="store",
-        type=str,
-        help="le nom de la base de données.",
-        default="onscrire",
-    )
-    parser.add_argument(
-        "-t",
-        "--tables",
-        action="store",
-        type=list,
-        nargs="*",
-        help="liste de table pour lesquells créer/remplacer les indexes.",
-    )
-
-    # parse les arguments en ligne de commande
-    args = parser.parse_args()
-
-    # connection à la base de données
-    conn = psycopg.connect(f"dbname={args.dbname}")
-    cur = conn.cursor()
-
-    # pick la fonction adaptée (create/drop).
-    if args.drop is False:
-        fn = drop_index
-    else:
-        fn = create_index
-
-    # récupère la liste des indexes.
-    idxs = get_idx_list(file=args.file)
-    # filtre les indexes (groupe, tables).
-    idxs = filter_idxs(idxs, groups=args.groups, tables=args.tables)
-
-    # applique la fonction sur chaque index retenu.
-    for i in idxs:
-        fn(cur=cur, table=i["table"], column=i["column"])
