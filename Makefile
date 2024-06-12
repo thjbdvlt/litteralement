@@ -12,7 +12,7 @@ construire:
 	psql $(dbname) < ./schema/tables.sql
 
 venv: .gitignore
-	python -3 venv venv
+	python -m venv venv
 
 installer: venv
 	$(_pip) install -r ./requirements.txt
