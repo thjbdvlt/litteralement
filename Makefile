@@ -4,7 +4,6 @@ _pip=$(CURDIR)/venv/bin/pip3
 
 all:
 	make .gitignore
-	make installer
 	make construire
 
 construire:
@@ -14,7 +13,7 @@ construire:
 venv: .gitignore
 	python -m venv venv
 
-installer: venv
+installer_venv: venv
 	$(_pip) install -r ./requirements.txt
 	$(_pip) install .
 	bash ./scripts/installer-tokentype.sh
