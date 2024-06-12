@@ -5,13 +5,13 @@ _pip=$(CURDIR)/venv/bin/pip3
 all:
 	make .gitignore
 	make installer
+	make construire
 
 construire:
-	psql -c 'drop database $(dbname)'
 	psql -c 'create database $(dbname)'
 	psql $(dbname) < ./schema/tables.sql
 
-venv:
+venv: .gitignore
 	python -3 venv venv
 
 installer: venv
