@@ -2,7 +2,11 @@ class Seq:
     """Une séquence numérique auto-incrémentée."""
 
     def __init__(self, start=0):
-        """Instancie une séquence."""
+        """Instancie une séquence.
+
+        Args:
+            start (int):  le début de la séquence.
+        """
 
         self.curval = start
 

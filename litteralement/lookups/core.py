@@ -10,6 +10,8 @@ class Lookup:
 
         Args:
             d (dict):  les données de départ {label: id}.
+            keyid (str):  le nom de la propriété 'id'. (défaut 'id')
+            start_id (int):  la valeur de la première id numérique. (défaut 0)
         """
 
         self.keyname = keyname
