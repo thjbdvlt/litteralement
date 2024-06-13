@@ -162,6 +162,8 @@ def inserer(conn, add_word_attrs=[], add_span_attrs=[]):
 
     # l'ordre est important: la table 'lexeme' dépend de 'morph', 'pos', 'lemma'. et la table 'mot' dépend de 'dep'.
     lookup_lex.copy_to()
+    # il faut que je repense un peu cette partie-là pour qu'il soit possible d'ajouter des user-defined propriétés pour les lexemes.
+    # une possibilité serait: de d'abord mettre les lexèmes en utilisant juste du SQL (select distinct, jsonb_to_recordset), et ensuite récupérer le lookup... mmmh mais non il me faut les IDs.
 
     # copier les mots, tokens, phrases dans les tables respectives. (avec ajout des propriétés user-defined.)
     for obj, attrs in [
