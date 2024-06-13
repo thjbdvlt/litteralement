@@ -74,7 +74,13 @@ class DatabaseLookup(Lookup):
     """Un Lookup pour les tables ."""
 
     def __init__(
-        self, conn, table, colname="nom", colid="id", **kwargs
+        self,
+        conn,
+        table,
+        colname="nom",
+        colid="id",
+        nonkeycolumns=[],
+        **kwargs,
     ):
         """Instancie un DatabaseLookup.
 
@@ -90,6 +96,7 @@ class DatabaseLookup(Lookup):
         self.colname = colname
         self.keyname = colname
         self.colid = colid
+        self.nonkeycolumns = nonkeycolumns
         d = self.fetch()
         super().__init__(d=d, keyname=colname, **kwargs)
 

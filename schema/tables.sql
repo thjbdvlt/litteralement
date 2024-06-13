@@ -105,7 +105,7 @@ create table nlp.token (
     unique(texte, num)
 ) inherits (nlp.segment);
 
-create table nlp.mot(
+create table nlp.mot (
     fonction smallint references nlp.fonction(id) not null,
     lexeme int references nlp.lexeme(id),
     noyau int

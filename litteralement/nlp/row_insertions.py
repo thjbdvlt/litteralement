@@ -6,6 +6,28 @@ from litteralement.lookups.database import TryDatabaseLookup
 from litteralement.lookups.database import MultiColumnLookup
 
 
+TOKEN = {
+    "table": "nlp.token",
+    "key": "nonmots",
+    "columns": ["debut", "fin", "num"],
+}
+MOT = {
+    "table": "nlp.mot",
+    "key": "mots",
+    "columns": ["debut", "fin", "num", "noyau", "lexeme", "fonction"],
+}
+PHRASE = {
+    "table": "nlp.phrase",
+    "key": "phrases",
+    "columns": ["debut", "fin"],
+}
+SPAN = {
+    "table": "nlp.span",
+    "key": "spans",
+    "columns": ["debut", "fin"],
+}
+
+
 def _copy_from_temp(conn, table, key, columns):
     """Copier dans les tables depuis la table temporaire.
 
@@ -43,35 +65,12 @@ def _copy_from_temp(conn, table, key, columns):
                 copy.write_row((textid,) + row)
 
 
-def _copy_mot(conn):
-    """Ajoute les mots dans la base de données."""
+def inserer(conn, add_word_attrs=[], add_span_attrs=[]):
+    """Ajoute les import._documents dans les tables.
 
-    table = "nlp.mot"
-    key = "mots"
-    columns = ["debut", "fin", "num", "noyau", "lexeme", "fonction"]
-    _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
-
-
-def _copy_token(conn):
-    """Ajoute les tokens dans la base de données."""
-
-    table = "nlp.token"
-    key = "nonmots"
-    columns = ["debut", "fin", "num"]
-    _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
-
-
-def _copy_phrase(conn):
-    """Ajoute les phrases dans la base de données."""
-
-    table = "nlp.phrase"
-    key = "phrases"
-    columns = ["debut", "fin"]
-    _copy_from_temp(conn=conn, table=table, key=key, columns=columns)
-
-
-def inserer(conn):
-    """Ajoute les import._documents dans les tables."""
+    Args:
+        conn (Connection)
+    """
 
     # créer des tables lookups pour les ids.
     lookup_lemma = DatabaseLookup(conn, "nlp.lemme", colname="graphie")
@@ -85,7 +84,7 @@ def inserer(conn):
         columns=["lemme", "norme", "nature", "morph"],
     )
 
-    # créer une table temporaire à partir de laquelle exécuter les 'copy', et dans laquelle va aller les mots, tokens, ..., avec les IDs pour remplacer les textes (des POS, DEP, MORPH, etc.).
+    # créer une table temporaire à partir de laquelle exécuter les 'copy', et dans laquelle vont aller les mots, tokens, ..., avec les IDs pour remplacer les textes (des POS, DEP, MORPH, etc.).
     conn.execute("create temp table _temp_doc (id int, j jsonb);")
 
     # deux curseurs: un pour envoyer les données, l'autre pour recevoir: je fais ça en même temps (avec des Generator).
@@ -113,7 +112,7 @@ def inserer(conn):
         ):
             val = lex[tag]
             lex[tag] = lookup[val]
-        key = lookup_lex.Key(**lex)
+        key = lookup_lex.key_from_dict(lex)
         _id = lookup_lex[key]
         return _id
 
@@ -164,10 +163,15 @@ def inserer(conn):
     # l'ordre est important: la table 'lexeme' dépend de 'morph', 'pos', 'lemma'. et la table 'mot' dépend de 'dep'.
     lookup_lex.copy_to()
 
-    # copier les mots, tokens, phrases dans les tables respectives.
-    _copy_mot(conn)
-    _copy_token(conn)
-    _copy_phrase(conn)
+    # copier les mots, tokens, phrases dans les tables respectives. (avec ajout des propriétés user-defined.)
+    for obj, attrs in [
+        (TOKEN, []),
+        (MOT, add_word_attrs),
+        (PHRASE, add_span_attrs),
+        (SPAN, add_span_attrs),
+    ]:
+        obj["columns"].extend(attrs)
+        _copy_from_temp(conn, **obj)
 
     # commit et clore la connection: fin de la fonction.
     conn.commit()

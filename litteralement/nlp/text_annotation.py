@@ -48,11 +48,11 @@ def todict(
                         "morph": str(token.morph),
                         "norme": token.norm_,
                         "lemme": token.lemma_,
-                        # "j": add_lex_attrs(token),
                     },
                 }
             )
-            d.update(add_word_attrs(token))
+            for k, v in add_word_attrs:
+                d[k] = v(token)
             words.append(d)
         else:
             nonwords.append(d)
@@ -69,7 +69,7 @@ def todict(
 
     result = {
         "phrases": sents,
-        "segments": spans,
+        "spans": spans,
         "nonmots": nonwords,
         "mots": words,
     }
@@ -138,6 +138,15 @@ def annoter(
     # commit les changements
     conn.commit()
 
+    for k in [
+        "add_word_attrs",
+        "add_lex_attrs",
+        "add_doc_attrs",
+        "add_span_attrs",
+    ]:
+        if k in kwargs:
+            kwargs[k] = [i[0] for i in kwargs[k]]
+
     # si le paramètre noinsert est False (défaut), les données sont automatiquement insérées dans les tables.
     if noinsert is False:
-        litteralement.nlp.row_insertions.inserer(conn)
+        litteralement.nlp.row_insertions.inserer(conn, **kwargs)

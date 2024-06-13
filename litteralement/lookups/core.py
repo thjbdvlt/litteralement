@@ -209,7 +209,7 @@ class ComposedKeyLookup(Lookup):
         """
 
         fields = self.Key._fields
-        return self.Key(**{d[i] for i in d if i in fields})
+        return self.Key(**{i: d[i] for i in fields})
 
     def key_from_dict_strict(self, d):
         """Construit une Key à partir d'un dict qui est strictement équivalent.
