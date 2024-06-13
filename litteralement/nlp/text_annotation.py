@@ -12,6 +12,7 @@ def todict(
     add_token_attrs=lambda token: {},
     add_word_attrs=lambda token: {},
     add_span_attrs=lambda span: {},
+    # add_lex_attrs=lambda token: {},
 ):
     """Construit un dict JSON sérialilable à partir d'un Doc.
 
@@ -47,6 +48,7 @@ def todict(
                         "morph": str(token.morph),
                         "norme": token.norm_,
                         "lemme": token.lemma_,
+                        # "j": add_lex_attrs(token),
                     },
                 }
             )

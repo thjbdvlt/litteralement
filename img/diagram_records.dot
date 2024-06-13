@@ -313,11 +313,12 @@ _ <font color="violet">fonction</font> <i><font color="grey">smallint</font></i>
 _ <font color="violet">lemme</font> <i><font color="grey">int</font></i><br align="left"/>
 _ <font color="violet">nature</font> <i><font color="grey">smallint</font></i><br align="left"/>
 _ <font color="violet">morph</font> <i><font color="grey">smallint</font></i><br align="left"/>
++ <font color="skyblue">attrs</font> <i><font color="grey">jsonb</font></i><br align="left"/>
 }>
             style=bold
             fixedsize=true
             width=2.2
-            height=1.8
+            height=2
             fontname=arial
             fontsize=18
             fontcolor="skyblue"
