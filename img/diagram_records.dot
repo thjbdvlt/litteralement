@@ -335,7 +335,7 @@ _ <font color="violet">morph</font> <i><font color="grey">smallint</font></i><br
             style=bold
             fixedsize=true
             width=2.2
-            height=1.4
+            height=1
             fontname=arial
             fontsize=18
             fontcolor="violet"
@@ -353,7 +353,7 @@ _ <font color="violet">morph</font> <i><font color="grey">smallint</font></i><br
             style=bold
             fixedsize=true
             width=2.2
-            height=1.4
+            height=1
             fontname=arial
             fontsize=18
             fontcolor="violet"
@@ -371,7 +371,7 @@ _ <font color="violet">morph</font> <i><font color="grey">smallint</font></i><br
             style=bold
             fixedsize=true
             width=2.2
-            height=1.4
+            height=1
             fontname=arial
             fontsize=18
             fontcolor="violet"
