@@ -8,11 +8,10 @@ def todict(
     doc,
     isword=lambda token: any((char.isalpha() for char in token.text))
     and not any((token.like_url, token.like_email)),
-    add_doc_attrs=lambda doc: {},
     add_token_attrs=lambda token: {},
     add_word_attrs=lambda token: {},
     add_span_attrs=lambda span: {},
-    # add_lex_attrs=lambda token: {},
+    add_lex_attrs=lambda token: {},
 ):
     """Construit un dict JSON sérialilable à partir d'un Doc.
 
@@ -37,7 +36,6 @@ def todict(
         end_char = start_char + len(token.text)
         i = token.i
         d = {"debut": start_char, "fin": end_char, "num": i}
-        d.update(add_token_attrs(token))
         if isword(token):
             d.update(
                 {
@@ -48,11 +46,10 @@ def todict(
                         "morph": str(token.morph),
                         "norme": token.norm_,
                         "lemme": token.lemma_,
+                        "j": add_lex_attrs(token)
                     },
                 }
             )
-            for k, v in add_word_attrs:
-                d[k] = v(token)
             words.append(d)
         else:
             nonwords.append(d)
@@ -64,8 +61,7 @@ def todict(
 
     spans = []
     for i in doc.spans:
-        d = {"debut": i.start_char + 1, "fin": i.end_char}
-        d.update(add_span_attrs(i))
+        d = {"debut": i.start_char + 1, "fin": i.end_char, "attrs": add_span_attrs(i)}
 
     result = {
         "phrases": sents,
@@ -73,8 +69,6 @@ def todict(
         "nonmots": nonwords,
         "mots": words,
     }
-
-    result.update(add_doc_attrs(doc))
 
     return result
 

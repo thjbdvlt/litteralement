@@ -1,5 +1,5 @@
 import json
-from psycopg.sql import SQL
+from psycopg.sql import SQL, Identifier
 import litteralement.util.statements
 from litteralement.lookups.database import DatabaseLookup
 from litteralement.lookups.database import TryDatabaseLookup
@@ -65,7 +65,7 @@ def _copy_from_temp(conn, table, key, columns):
                 copy.write_row((textid,) + row)
 
 
-def inserer(conn, add_word_attrs=[], add_span_attrs=[]):
+def _inserer_lookups(conn, add_word_attrs=[], add_span_attrs=[]):
     """Ajoute les import._documents dans les tables.
 
     Args:
@@ -162,8 +162,6 @@ def inserer(conn, add_word_attrs=[], add_span_attrs=[]):
 
     # l'ordre est important: la table 'lexeme' dépend de 'morph', 'pos', 'lemma'. et la table 'mot' dépend de 'dep'.
     lookup_lex.copy_to()
-    # il faut que je repense un peu cette partie-là pour qu'il soit possible d'ajouter des user-defined propriétés pour les lexemes.
-    # une possibilité serait: de d'abord mettre les lexèmes en utilisant juste du SQL (select distinct, jsonb_to_recordset), et ensuite récupérer le lookup... mmmh mais non il me faut les IDs.
 
     # copier les mots, tokens, phrases dans les tables respectives. (avec ajout des propriétés user-defined.)
     for obj, attrs in [
@@ -176,5 +174,218 @@ def inserer(conn, add_word_attrs=[], add_span_attrs=[]):
         _copy_from_temp(conn, **obj)
 
     # commit et clore la connection: fin de la fonction.
+    conn.commit()
+    conn.close()
+
+
+def _insert_mots(conn):
+    """Ajoute les mots et objets dérivés (pos, lexèmes, ...).
+
+    Args:
+        conn (Connection)
+    """
+
+    # ajouter les tags de fonction manquants
+    sql_add_dep_tag = SQL("""with _mot as (
+        select 
+        x.fonction
+        from import._document d,
+        jsonb_to_recordset(d.j -> 'mots') as x(fonction text)
+    ) 
+    insert into fonction (nom)
+    select distinct * from _mot
+    except select nom from fonction""")
+    conn.execute(sql_add_dep_tag)
+
+    # crée une table temporaire pour les mots
+    sql_temp_mot = SQL("""create temp table _mot as
+    select 
+        d.id as texte,
+        f.id as fonction,
+        x.debut,
+        x.fin,
+        x.num,
+        x.lexeme,
+        x.noyau,
+        x.j
+    from import._document d,
+    jsonb_to_recordset(d.j -> 'mots') as x (
+        fonction text,
+        debut int, 
+        fin int, 
+        num int, 
+        lexeme jsonb, 
+        noyau int,
+        j jsonb
+    ) join fonction f on x.fonction = f.nom""")
+    conn.execute(sql_temp_mot)
+
+    # récupère les nouveaux lexèmes, à ajouter.
+    sql_nouveau_lexeme = SQL("""
+    create temp table _nouveau_lexeme as
+    with _lexeme_text as
+    (
+        select
+        n.nom as nature,
+        l.graphie as lemme,
+        m.feats as morph,
+        x.norme as norme,
+        x.j as j
+        from lexeme x
+        join nature n on n.id = x.nature
+        join morph m on m.id = x.morph
+        join lemme l on l.id = x.lemme
+    )
+    select lexeme from _mot
+    except
+    select to_jsonb(x) - 'id' from _lexeme_text x;""")
+    conn.execute(sql_nouveau_lexeme)
+
+    # ajoute les propriétés des lexèmes qui sont dans des tables séparées: lemme, nature, morph. (les autres, norme et 'j' ne sont pas des foreign keys mais des valeurs littérales.)
+    sql_add_lex_attr = SQL("""
+    insert into {tablename} ({col})
+    select distinct lexeme ->> %s from _nouveau_lexeme
+    except select {col} from {tablename}""")
+    for tablename, col in [
+        ("lemme", "graphie"),
+        ("morph", "feats"),
+        ("nature", "nom"),
+    ]:
+        stmt = sql_add_lex_attr.format(tablename=Identifier(tablename), col=Identifier(col))
+        conn.execute(stmt, (tablename,))
+
+    # ajoute les lexèmes
+    sql_add_lexeme = SQL("""
+    with _lex as (
+        select x.* from _nouveau_lexeme lx, jsonb_to_record(lx.lexeme) as x(
+            norme text, 
+            lemme text, 
+            nature text, 
+            morph text, 
+            j jsonb
+        )
+    )
+    insert into lexeme (nature, lemme, morph, norme, j)
+    select
+        n.id as nature,
+        l.id as lemme,
+        m.id as morph,
+        x.norme as norme,
+        x.j as j
+    from _lex x
+    join nature n on n.nom = x.nature
+    join morph m on m.feats = x.morph
+    join lemme l on l.graphie = x.lemme
+    except
+    select nature, lemme, morph, norme, j from lexeme;""")
+    conn.execute(sql_add_lexeme)
+
+    # crée une table lookup avec deux colonnes: les IDs des lexèmes et leur représentations (textuelle) en JSONB (similaire à celle dans les mots).
+    sql_lex_id_jsonb = SQL("""
+    create temp table id_jsonb_lex as
+    with _lex as (
+        select
+            x.id,
+            n.nom as nature,
+            l.graphie as lemme,
+            m.feats as morph,
+            x.norme as norme,
+            x.j as j
+        from lexeme x
+        join nature n on n.id = x.nature
+        join morph m on m.id = x.morph
+        join lemme l on l.id = x.lemme
+    ) select x.id, to_jsonb(x) - 'id' as j from _lex x;""")
+    conn.execute(sql_lex_id_jsonb)
+
+    # ajoute les mots
+    sql_add_mot = SQL("""
+    insert into mot (texte, debut, fin, num, noyau, fonction, lexeme)
+    select
+        m.texte,
+        m.debut,
+        m.fin,
+        m.num,
+        m.noyau,
+        m.fonction,
+        x.id
+    from _mot m
+    join id_jsonb_lex x on x.j = m.lexeme;""")
+    conn.execute(sql_add_mot)
+
+
+def _insert_phrases(conn):
+    """Ajoute les phrases depuis les annotations.
+
+    Args:
+        conn (Connection)
+    """
+
+    sql_add_phrase = SQL("""
+        insert into phrase
+        select
+            d.id as texte,
+            x.debut,
+            x.fin
+        from import._document d,
+        jsonb_to_recordset(d.j -> 'phrases') as x(
+            debut integer, fin integer
+        );""")
+    conn.execute(sql_add_phrase)
+
+
+def _insert_tokens(conn):
+    """Ajoute les tokens depuis les annotations.
+
+    Args:
+        conn (Connection)
+    """
+
+    sql_add_token = SQL("""
+        insert into token
+        select
+            d.id as texte,
+            x.debut,
+            x.fin,
+            x.num
+        from import._document d,
+        jsonb_to_recordset(d.j -> 'nonmots') as x(
+            debut integer, fin integer, num integer
+        );""")
+    conn.execute(sql_add_token)
+
+
+def _insert_spans(conn):
+    """Ajoute les spans depuis les annotations.
+
+    Args:
+        conn (Connection)
+    """
+
+    sql_add_span = SQL("""
+        insert into span
+        select
+            d.id as texte,
+            x.debut,
+            x.fin,
+            x.attrs
+        from import._document d,
+        jsonb_to_recordset(d.j -> 'spans') as x(
+            debut integer, fin integer, attrs jsonb
+        );""")
+    conn.execute(sql_add_span)
+
+
+def inserer(conn):
+    """Ajoute les annotations dans les tables.
+
+    Args:
+        conn (Connection)
+    """
+
+    _insert_mots(conn)
+    _insert_tokens(conn)
+    _insert_spans(conn)
+    _insert_phrases(conn)
     conn.commit()
     conn.close()
