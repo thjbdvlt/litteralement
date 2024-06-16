@@ -178,7 +178,83 @@ def _inserer_lookups(conn, add_word_attrs=[], add_span_attrs=[]):
     conn.close()
 
 
-def _insert_mots(conn):
+def _insert_lexemes(conn, **kwargs):
+    temp_lex = "_lex"
+
+    lex_attrs = [
+        {
+            "name": "lemme",
+            "value_column": "graphie",
+            "is_literal": False,
+        },
+        {
+            "name": "morph",
+            "value_column": "feats",
+            "is_literal": False,
+        },
+        {
+            "name": "nature",
+            "value_column": "nom",
+            "is_literal": False,
+        },
+        {
+            "name": "norme",
+            "is_literal": True,
+        },
+    ]
+
+    lex_user_attrs = kwargs.get("lex_user_attrs")
+    if lex_user_attrs:
+        lex_attrs.extend(lex_user_attrs)
+
+    sql_join = SQL(
+        "join {table} on {table}.{col} = {temp_lex}.{name}"
+    )
+    sql_select = SQL("{table}.{col} as {name}")
+    lex = Identifier(temp_lex)
+
+    select_stmts = []
+    joins_stmts = []
+
+    for i in lex_attrs:
+        name = Identifier(i['name'])
+        is_literal = i['is_literal']
+
+        if is_literal is True:
+            col = Identifier(i['name'])
+            table = lex
+
+        else:
+            col = Identifier(i['value_column'])
+            table = name
+
+            join_stmt = sql_join.format(
+                name=name,
+                col=col,
+                temp_lex=lex,
+                table=name,
+            )
+            joins_stmts.append(join_stmt)
+
+        select = sql_select.format(table=table, col=col, name=name)
+        select_stmts.append(select)
+
+    # ajoute les propriétés des lexèmes qui sont dans des tables séparées: lemme, nature, morph. (les autres, norme et 'j' ne sont pas des foreign keys mais des valeurs littérales.)
+    sql_add_lex_attr = SQL("""
+    insert into {tablename} ({col})
+    select distinct lexeme ->> %s from _nouveau_lexeme
+    except select {col} from {tablename}""")
+    for i in lex_attrs:
+        if i['is_literal'] is False:
+            tablename = i['name']
+            col = i['value_column']
+            stmt = sql_add_lex_attr.format(
+                tablename=Identifier(tablename), col=Identifier(col)
+            )
+            conn.execute(stmt, (tablename,))
+
+
+def _insert_mots(conn, **kwargs):
     """Ajoute les mots et objets dérivés (pos, lexèmes, ...).
 
     Args:
@@ -241,18 +317,21 @@ def _insert_mots(conn):
     select to_jsonb(x) - 'id' from _lexeme_text x;""")
     conn.execute(sql_nouveau_lexeme)
 
-    # ajoute les propriétés des lexèmes qui sont dans des tables séparées: lemme, nature, morph. (les autres, norme et 'j' ne sont pas des foreign keys mais des valeurs littérales.)
-    sql_add_lex_attr = SQL("""
-    insert into {tablename} ({col})
-    select distinct lexeme ->> %s from _nouveau_lexeme
-    except select {col} from {tablename}""")
-    for tablename, col in [
-        ("lemme", "graphie"),
-        ("morph", "feats"),
-        ("nature", "nom"),
-    ]:
-        stmt = sql_add_lex_attr.format(tablename=Identifier(tablename), col=Identifier(col))
-        conn.execute(stmt, (tablename,))
+    _insert_lexemes(conn, **kwargs)
+    # # ajoute les propriétés des lexèmes qui sont dans des tables séparées: lemme, nature, morph. (les autres, norme et 'j' ne sont pas des foreign keys mais des valeurs littérales.)
+    # sql_add_lex_attr = SQL("""
+    # insert into {tablename} ({col})
+    # select distinct lexeme ->> %s from _nouveau_lexeme
+    # except select {col} from {tablename}""")
+    # for tablename, col in [
+    #     ("lemme", "graphie"),
+    #     ("morph", "feats"),
+    #     ("nature", "nom"),
+    # ]:
+    #     stmt = sql_add_lex_attr.format(
+    #         tablename=Identifier(tablename), col=Identifier(col)
+    #     )
+    #     conn.execute(stmt, (tablename,))
 
     # ajoute les lexèmes
     sql_add_lexeme = SQL("""
@@ -267,15 +346,18 @@ def _insert_mots(conn):
     )
     insert into lexeme (nature, lemme, morph, norme, j)
     select
-        n.id as nature,
-        l.id as lemme,
-        m.id as morph,
-        x.norme as norme,
-        x.j as j
-    from _lex x
-    join nature n on n.nom = x.nature
-    join morph m on m.feats = x.morph
-    join lemme l on l.graphie = x.lemme
+        nature.id as nature,
+        nature.id as lemme,
+        morph.id as morph,
+        _lex.norme as norme,
+        _lex.j as j
+    from _lex
+    -- join nature n on n.nom = x.nature
+    -- join morph m on m.feats = x.morph
+    -- join lemme l on l.graphie = x.lemme
+    join nature on nature.nom = _lex.nature
+    join morph on morph.feats = _lex.morph
+    join lemme on lemme.graphie = _lex.lemme
     except
     select nature, lemme, morph, norme, j from lexeme;""")
     conn.execute(sql_add_lexeme)
@@ -314,7 +396,7 @@ def _insert_mots(conn):
     conn.execute(sql_add_mot)
 
 
-def _insert_phrases(conn):
+def _insert_phrases(conn, **kwargs):
     """Ajoute les phrases depuis les annotations.
 
     Args:
@@ -334,7 +416,7 @@ def _insert_phrases(conn):
     conn.execute(sql_add_phrase)
 
 
-def _insert_tokens(conn):
+def _insert_tokens(conn, **kwargs):
     """Ajoute les tokens depuis les annotations.
 
     Args:
@@ -355,7 +437,7 @@ def _insert_tokens(conn):
     conn.execute(sql_add_token)
 
 
-def _insert_spans(conn):
+def _insert_spans(conn, **kwargs):
     """Ajoute les spans depuis les annotations.
 
     Args:
@@ -376,16 +458,17 @@ def _insert_spans(conn):
     conn.execute(sql_add_span)
 
 
-def inserer(conn):
+def inserer(conn, **kwargs):
     """Ajoute les annotations dans les tables.
 
     Args:
         conn (Connection)
     """
 
-    _insert_mots(conn)
-    _insert_tokens(conn)
-    _insert_spans(conn)
-    _insert_phrases(conn)
+    _insert_mots(conn, **kwargs)
+    _insert_tokens(conn, **kwargs)
+    _insert_spans(conn, **kwargs)
+    _insert_phrases(conn, **kwargs)
+
     conn.commit()
     conn.close()
