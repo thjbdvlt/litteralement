@@ -179,65 +179,136 @@ def _inserer_lookups(conn, add_word_attrs=[], add_span_attrs=[]):
 
 
 def _insert_lexemes(conn, **kwargs):
-    temp_lex = "_lex"
+    """Ajoute les nouveaux lexèmes.
 
+    Args:
+        conn (Connection)
+
+    Optionnel:
+        lex_user_attrs (list[dict])
+
+    Les dicts qui se trouvent dans lex_user_attrs doivent avoir le format suivant:
+        {"name": "alt_pos", "value_column": "tag", "is_literal": False}
+        {"name": "alt_pos", "is_literal": True}
+    """
+
+    # la table temporaire pour store les informations des lexèmes.
+    temp_lex = Identifier("_lex")
+    lexeme = Identifier("lexeme")
+
+    # les attributs (et colonnes) de base des lexèmes.
     lex_attrs = [
         {
             "name": "lemme",
             "value_column": "graphie",
+            "datatype": "text",
             "is_literal": False,
         },
         {
             "name": "morph",
             "value_column": "feats",
+            "datatype": "text",
             "is_literal": False,
         },
         {
             "name": "nature",
             "value_column": "nom",
+            "datatype": "text",
             "is_literal": False,
         },
         {
             "name": "norme",
+            "datatype": "text",
             "is_literal": True,
         },
     ]
 
+    # ajouter à ces lexèmes les lexèmes définis par l'utilisateurice
     lex_user_attrs = kwargs.get("lex_user_attrs")
     if lex_user_attrs:
         lex_attrs.extend(lex_user_attrs)
 
-    sql_join = SQL(
-        "join {table} on {table}.{col} = {temp_lex}.{name}"
-    )
+    # # récupère les nouveaux lexèmes, à ajouter.
+    # # TODO: récupérer tous les lex_user_attrs!!!
+    # sql_nouveau_lexeme = SQL("""
+    # create temp table _nouveau_lexeme as
+    # with _lexeme_text as
+    # (
+    #     select
+    #         n.nom as nature,
+    #         l.graphie as lemme,
+    #         m.feats as morph,
+    #         x.norme as norme
+    #     from lexeme x
+    #     join nature n on n.id = x.nature
+    #     join morph m on m.id = x.morph
+    #     join lemme l on l.id = x.lemme
+    # )
+    # select lexeme from _mot
+    # except
+    # select to_jsonb(x) - 'id' from _lexeme_text x;""")
+    # conn.execute(sql_nouveau_lexeme)
+
+    # ajoute les lexèmes
+    sql_add_lexeme = SQL("""
+    create temp table _lex as
+        select x.* from _nouveau_lexeme lx, jsonb_to_record(lx.lexeme) as x(
+            norme text, 
+            lemme text, 
+            nature text, 
+            morph text, 
+            j jsonb
+    )""")
+    conn.execute(sql_add_lexeme)
+
+    sql_join = SQL("join {table} on {table}.{col} = {table_lex}.{name}")
     sql_select = SQL("{table}.{col} as {name}")
-    lex = Identifier(temp_lex)
 
     select_stmts = []
     joins_stmts = []
+    columns = []
+
+    reverse_select_stmts = []
+    reverse_joins_stmts = []
 
     for i in lex_attrs:
-        name = Identifier(i['name'])
-        is_literal = i['is_literal']
+        name = Identifier(i["name"])
+        columns.append(name)
+        is_literal = i["is_literal"]
 
         if is_literal is True:
-            col = Identifier(i['name'])
-            table = lex
+            col_insert = Identifier(i["name"])
+            table = temp_lex
 
         else:
-            col = Identifier(i['value_column'])
+            col = Identifier(i["value_column"])
+            _id = Identifier("id")
+            col_insert = _id
             table = name
 
-            join_stmt = sql_join.format(
+            join = sql_join.format(
+                table=name,
                 name=name,
                 col=col,
-                temp_lex=lex,
-                table=name,
+                table_lex=temp_lex,
             )
-            joins_stmts.append(join_stmt)
+            joins_stmts.append(join)
 
-        select = sql_select.format(table=table, col=col, name=name)
+            reverse_join = sql_join.format(
+                table=name,
+                name=name,
+                table_lex=Identifier('lexeme'),
+                col=_id,
+            )
+            reverse_joins_stmts.append(reverse_join)
+
+        select = sql_select.format(
+            table=table, col=col_insert, name=name
+        )
         select_stmts.append(select)
+        reverse_select = sql_select.format(
+            table=table, col=col, name=name
+        )
 
     # ajoute les propriétés des lexèmes qui sont dans des tables séparées: lemme, nature, morph. (les autres, norme et 'j' ne sont pas des foreign keys mais des valeurs littérales.)
     sql_add_lex_attr = SQL("""
@@ -245,13 +316,26 @@ def _insert_lexemes(conn, **kwargs):
     select distinct lexeme ->> %s from _nouveau_lexeme
     except select {col} from {tablename}""")
     for i in lex_attrs:
-        if i['is_literal'] is False:
-            tablename = i['name']
-            col = i['value_column']
+        if i["is_literal"] is False:
+            tablename = i["name"]
+            col = i["value_column"]
             stmt = sql_add_lex_attr.format(
                 tablename=Identifier(tablename), col=Identifier(col)
             )
             conn.execute(stmt, (tablename,))
+
+    # construit le statement qui ajoute les nouveaux lexèmes, avec les jointures sur les tables foreign keys (lemme, nature, morph, et aussi les user-defined).
+    stmt = SQL("""insert into lexeme ({columns})
+               select {values}
+               from {temp_lex}
+               {joins}
+    """).format(
+        columns=SQL(", ").join(columns),
+        temp_lex=temp_lex,
+        values=SQL(", ").join(select_stmts),
+        joins=SQL("\n").join(joins_stmts),
+    )
+    conn.execute(stmt)
 
 
 def _insert_mots(conn, **kwargs):
@@ -282,8 +366,7 @@ def _insert_mots(conn, **kwargs):
         x.fin,
         x.num,
         x.lexeme,
-        x.noyau,
-        x.j
+        x.noyau
     from import._document d,
     jsonb_to_recordset(d.j -> 'mots') as x (
         fonction text,
@@ -291,76 +374,11 @@ def _insert_mots(conn, **kwargs):
         fin int, 
         num int, 
         lexeme jsonb, 
-        noyau int,
-        j jsonb
+        noyau int
     ) join fonction f on x.fonction = f.nom""")
     conn.execute(sql_temp_mot)
 
-    # récupère les nouveaux lexèmes, à ajouter.
-    sql_nouveau_lexeme = SQL("""
-    create temp table _nouveau_lexeme as
-    with _lexeme_text as
-    (
-        select
-        n.nom as nature,
-        l.graphie as lemme,
-        m.feats as morph,
-        x.norme as norme,
-        x.j as j
-        from lexeme x
-        join nature n on n.id = x.nature
-        join morph m on m.id = x.morph
-        join lemme l on l.id = x.lemme
-    )
-    select lexeme from _mot
-    except
-    select to_jsonb(x) - 'id' from _lexeme_text x;""")
-    conn.execute(sql_nouveau_lexeme)
-
     _insert_lexemes(conn, **kwargs)
-    # # ajoute les propriétés des lexèmes qui sont dans des tables séparées: lemme, nature, morph. (les autres, norme et 'j' ne sont pas des foreign keys mais des valeurs littérales.)
-    # sql_add_lex_attr = SQL("""
-    # insert into {tablename} ({col})
-    # select distinct lexeme ->> %s from _nouveau_lexeme
-    # except select {col} from {tablename}""")
-    # for tablename, col in [
-    #     ("lemme", "graphie"),
-    #     ("morph", "feats"),
-    #     ("nature", "nom"),
-    # ]:
-    #     stmt = sql_add_lex_attr.format(
-    #         tablename=Identifier(tablename), col=Identifier(col)
-    #     )
-    #     conn.execute(stmt, (tablename,))
-
-    # ajoute les lexèmes
-    sql_add_lexeme = SQL("""
-    with _lex as (
-        select x.* from _nouveau_lexeme lx, jsonb_to_record(lx.lexeme) as x(
-            norme text, 
-            lemme text, 
-            nature text, 
-            morph text, 
-            j jsonb
-        )
-    )
-    insert into lexeme (nature, lemme, morph, norme, j)
-    select
-        nature.id as nature,
-        nature.id as lemme,
-        morph.id as morph,
-        _lex.norme as norme,
-        _lex.j as j
-    from _lex
-    -- join nature n on n.nom = x.nature
-    -- join morph m on m.feats = x.morph
-    -- join lemme l on l.graphie = x.lemme
-    join nature on nature.nom = _lex.nature
-    join morph on morph.feats = _lex.morph
-    join lemme on lemme.graphie = _lex.lemme
-    except
-    select nature, lemme, morph, norme, j from lexeme;""")
-    conn.execute(sql_add_lexeme)
 
     # crée une table lookup avec deux colonnes: les IDs des lexèmes et leur représentations (textuelle) en JSONB (similaire à celle dans les mots).
     sql_lex_id_jsonb = SQL("""
@@ -371,8 +389,7 @@ def _insert_mots(conn, **kwargs):
             n.nom as nature,
             l.graphie as lemme,
             m.feats as morph,
-            x.norme as norme,
-            x.j as j
+            x.norme as norme
         from lexeme x
         join nature n on n.id = x.nature
         join morph m on m.id = x.morph

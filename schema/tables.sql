@@ -84,8 +84,7 @@ create table nlp.lexeme (
     lemme int references nlp.lemme (id) not null,
     nature smallint references nlp.nature(id) not null,
     morph smallint references nlp.morph(id) not null,
-    norme text not null,
-    j jsonb
+    norme text not null
 );
 
 -- 2.2. seconde partie décrit les mots et segments réels, utilisés dans des contextes (des textes).
