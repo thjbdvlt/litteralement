@@ -132,15 +132,15 @@ def annoter(
     # commit les changements
     conn.commit()
 
-    for k in [
-        "add_word_attrs",
-        "add_lex_attrs",
-        "add_doc_attrs",
-        "add_span_attrs",
-    ]:
-        if k in kwargs:
-            kwargs[k] = [i[0] for i in kwargs[k]]
+    # for k in [
+    #     "add_word_attrs",
+    #     "add_lex_attrs",
+    #     "add_doc_attrs",
+    #     "add_span_attrs",
+    # ]:
+    #     if k in kwargs:
+    #         kwargs[k] = [i[0] for i in kwargs[k]]
 
     # si le paramètre noinsert est False (défaut), les données sont automatiquement insérées dans les tables.
     if noinsert is False:
-        litteralement.nlp.row_insertions.inserer(conn, **kwargs)
+        litteralement.nlp.row_insertions.inserer(conn, )#**kwargs)
