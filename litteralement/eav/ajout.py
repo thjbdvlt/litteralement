@@ -316,9 +316,8 @@ def importer(conn):
     _create_data_temp_table(conn)
 
     # récupère l'id actuel de la table "entite".
-    curval = conn.execute("select nextval('entite_id_seq')").fetchone()[
-        0
-    ]
+    curval = conn.execute("select nextval('entite_id_seq')").fetchone()
+    curval = curval[0]
 
     # construit les lookups (qui remplissent une fonction de  "join").
     lookup_classe = TryDatabaseLookup(conn, "onto.classe")
