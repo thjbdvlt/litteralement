@@ -1,5 +1,5 @@
 [project]
-name = "littéralement"
+name = "litteralement"
 authors = [{name="thjbdvlt"}]
 version = "0.1.0"
 description = "base de données postgresql pour l'analyse de textes en français conçue selon un modèle EAV hybride."
