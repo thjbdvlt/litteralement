@@ -122,3 +122,21 @@ litteralement.nlp.text_annotation.annoter(
 # on peut ensuite insérer les annotations à l'aide de la fonction suivante:
 litteralement.nlp.row_insertion.inserer(conn)
 ```
+
+des propriétés supplémentaires peuvent être ajoutées dans des colonnes supplémentaires (pour l'instant seulement pour les lexèmes). pour chaque propriété additionnelle, un `dict` définit un _nom_ de propriété (le nom de la colonne, et éventuellement de la table associée), un _datatype_, une _function_ permettant d'obtenir la valeur à partir d'un `Token`, définit aussi si la valeur est une valeur littérale ou s'il faut récupérer l'`id` dans une table de référence (comme pour les _part-of-speech tags_, par exemple). la colonne et la tables sont créées automatiquement si elles n'existent pas. si la valeur est stockée dans une table de référence, il faut spécifier le nom de la colonne qui contient cette valeur dans le paramètre _value_column_.
+
+```python
+fn_custom_morph = lambda token: 'TODO: analyser'
+custom_morph_attr = {
+    "name": "random_morph", 
+    "is_literal": True, 
+    "datatpe": "text", 
+    "value_column": "feats", 
+    "function": fn_custom_morph
+}
+lex_user_attrs = [custom_morph_attr]
+litteralement.nlp.text_annotation.annoter(
+    conn,
+    lex_user_attrs=lex_user_attrs
+)
+```
