@@ -12,6 +12,7 @@ def todict(
     add_word_attrs=lambda token: {},
     add_span_attrs=lambda span: {},
     add_lex_attrs=lambda token: {},
+    lex_user_attrs=[],
 ):
     """Construit un dict JSON sérialilable à partir d'un Doc.
 
@@ -46,10 +47,14 @@ def todict(
                         "morph": str(token.morph),
                         "norme": token.norm_,
                         "lemme": token.lemma_,
-                        "j": add_lex_attrs(token)
+                        # "j": add_lex_attrs(token)
                     },
                 }
             )
+            for i in lex_user_attrs:
+                k = i["name"]
+                fn = i["function"]
+                d["lexeme"][k] = fn(token)
             words.append(d)
         else:
             nonwords.append(d)
@@ -61,7 +66,11 @@ def todict(
 
     spans = []
     for i in doc.spans:
-        d = {"debut": i.start_char + 1, "fin": i.end_char, "attrs": add_span_attrs(i)}
+        d = {
+            "debut": i.start_char + 1,
+            "fin": i.end_char,
+            "attrs": add_span_attrs(i),
+        }
 
     result = {
         "phrases": sents,
