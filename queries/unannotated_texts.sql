@@ -1,4 +1,4 @@
--- SELECT les textes pas annotés.
+-- SELECT les textes pas encore annotés.
 with unannotated as (
     select t.id from texte t
     except
