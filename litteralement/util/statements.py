@@ -105,14 +105,16 @@ def select_values_fk(table, cols, rev=False):
     values = []
     joins = []
     stmt_val = SQL("{table}.{col} as {name}")
-    stmt_join = SQL("join {table1} on {table1}.{col1} = {table2}.{col2}")
+    stmt_join = SQL(
+        "join {table1} on {table1}.{col1} = {table2}.{col2}"
+    )
     for i in cols:
-        name = Identifier(i['name'])
-        if i['is_literal'] is True:
+        name = Identifier(i["name"])
+        if i["is_literal"] is True:
             s = stmt_val.format(table=table, col=name, name=name)
         else:
-            val = Identifier(i.get('value_column', 'nom'))
-            _id = Identifier('id')
+            val = Identifier(i.get("value_column", "nom"))
+            _id = Identifier("id")
             if rev is False:
                 col_val = val
                 col_join = _id
@@ -120,7 +122,9 @@ def select_values_fk(table, cols, rev=False):
                 col_val = _id
                 col_join = val
             s = stmt_val.format(table=name, col=col_val, name=name)
-            j = stmt_join.format(table1=name, col1=col_join, table2=table, col2=name)
+            j = stmt_join.format(
+                table1=name, col1=col_join, table2=table, col2=name
+            )
             joins.append(j)
         values.append(s)
     select = SQL("""select {values} from {table} {joins}""")

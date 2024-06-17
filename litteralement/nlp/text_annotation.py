@@ -52,9 +52,9 @@ def todict(
                 }
             )
             for i in lex_user_attrs:
-                k = i['name']
-                fn = i['function']
-                d['lexeme'][k] = fn(token)
+                k = i["name"]
+                fn = i["function"]
+                d["lexeme"][k] = fn(token)
             words.append(d)
         else:
             nonwords.append(d)
@@ -66,7 +66,11 @@ def todict(
 
     spans = []
     for i in doc.spans:
-        d = {"debut": i.start_char + 1, "fin": i.end_char, "attrs": add_span_attrs(i)}
+        d = {
+            "debut": i.start_char + 1,
+            "fin": i.end_char,
+            "attrs": add_span_attrs(i),
+        }
 
     result = {
         "phrases": sents,
