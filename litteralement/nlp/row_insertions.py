@@ -1,6 +1,7 @@
 from psycopg.sql import SQL, Identifier
 from litteralement.util.statements import select_values_fk
 
+DOC_TABLE = "import._document"
 
 LEXEME_TEXT_TABLE = "_lexeme_text"
 
@@ -116,8 +117,8 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
         userattrs = lex_user_attrs
         lex_attrs.extend(userattrs)
 
-    # ajoute les colonnes et tables supplémentaires.
-    add_user_defined_columns(conn, "lexeme", userattrs)
+        # ajoute les colonnes et tables supplémentaires.
+        add_user_defined_columns(conn, "lexeme", userattrs)
 
     # une vue pour les lexemes-text (avec les valeurs, et pas les fk).
     s = SQL("""drop view if exists {}; create view {} as """)
@@ -200,7 +201,8 @@ def _insert_mots(conn, **kwargs):
     ) 
     insert into fonction (nom)
     select distinct * from _mot
-    except select nom from fonction""")
+    except select nom from fonction
+    """)
     conn.execute(sql_add_dep_tag)
 
     # crée une table temporaire pour les mots
@@ -310,7 +312,7 @@ def _insert_spans(conn, **kwargs):
     conn.execute(sql_add_span)
 
 
-def inserer(conn, **kwargs):
+def inserer(conn, keep_data=False, **kwargs):
     """Ajoute les annotations dans les tables.
 
     Args:
@@ -321,6 +323,9 @@ def inserer(conn, **kwargs):
     _insert_tokens(conn, **kwargs)
     _insert_spans(conn, **kwargs)
     _insert_phrases(conn, **kwargs)
+
+    if keep_data is False:
+        conn.execute(SQL("truncate import._document"))
 
     conn.commit()
     conn.close()
