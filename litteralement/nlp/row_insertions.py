@@ -79,16 +79,13 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
     # la table temporaire pour store les informations des lexèmes.
     lexeme_text = Identifier(LEXEME_TEXT_TABLE)
 
-    # les attributs (et colonnes) de base des lexèmes.
-    lex_attrs = [i for i in LEXEME_ATTRS]
+    # les attributs (et colonnes) de base des lexèmes. (copie)
+    lex_attrs = [{k: v for k, v in i.items()} for i in LEXEME_ATTRS]
 
-    # ajouter à ces lexèmes les lexèmes définis par l'utilisateurice
+    # ajouter à ces lexèmes les lexèmes définis par l'utilisateurice. créer aussi les colonnes et tables correspondantes.
     if lex_user_attrs:
-        userattrs = lex_user_attrs
-        lex_attrs.extend(userattrs)
-
-        # ajoute les colonnes et tables supplémentaires.
-        add_user_defined_columns(conn, "lexeme", userattrs)
+        lex_attrs.extend(lex_user_attrs)
+        add_user_defined_columns(conn, "lexeme", lex_user_attrs)
 
     # une vue pour les lexemes-text (avec les valeurs, et pas les fk).
     s = SQL("""drop view if exists {}; create view {} as """)
@@ -97,13 +94,13 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
     conn.execute(s)
 
     # table temporaire avec uniquement les nouveaux lexèmes.
-    sql_reverse = SQL("""create temp table _nouveau_lexeme as
+    s_rev = SQL("""create temp table _nouveau_lexeme as
     select lexeme from _mot
     except
     select to_jsonb(x) - 'id' from {lextext} x
-    """).format(lextext=lexeme_text)
-
-    conn.execute(sql_reverse)
+    """)
+    s_rev = s_rev.format(lextext=lexeme_text)
+    conn.execute(s_rev)
 
     # construire la description des fields à récupérer dans le JSONB
     # (nom et datatype)
@@ -113,16 +110,16 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
     fields = SQL(",\n").join(fields)
 
     # déplier les JSONB: récupérer les lexèmes dans les Docs.
-    sql_add_lexeme = SQL("""create temp table _lex as
+    s_add = SQL("""create temp table _lex as
     select 
         x.* 
     from _nouveau_lexeme lx, 
-        jsonb_to_record(lx.lexeme) as x(
-            {fields}
-        )
+    jsonb_to_record(lx.lexeme) as x(
+        {fields}
+    )
     """)
-    sql_add_lexeme = sql_add_lexeme.format(fields=fields)
-    conn.execute(sql_add_lexeme)
+    s_add = s_add.format(fields=fields)
+    conn.execute(s_add)
 
     # ajoute les propriétés des lexèmes qui sont dans des tables séparées: lemme, nature, morph. (les autres, norme et 'j' ne sont pas des foreign keys mais des valeurs littérales.)
     sql_add_lex_attr = SQL("""
@@ -212,10 +209,15 @@ def _insert_mots(conn, **kwargs):
     _insert_lexemes(conn, **kwargs)
 
     # crée une table lookup avec deux colonnes: les IDs des lexèmes et leur représentations (textuelle) en JSONB (similaire à celle dans les mots).
-    sql_lex_id_jsonb = SQL("""
-    create temp table id_jsonb_lex as
-    select x.id, to_jsonb(x) - 'id' as j from _lexeme_text x;""")
-    conn.execute(sql_lex_id_jsonb)
+    s = SQL("""create temp table id_jsonb_lex as
+    select 
+        x.id, to_jsonb(x) - 'id' as j 
+    from {lextext} x;
+    """)
+
+    s = s.format(lextext=Identifier(LEXEME_TEXT_TABLE))
+
+    conn.execute(s)
 
     # ajoute les mots
     sql_add_mot = SQL("""
