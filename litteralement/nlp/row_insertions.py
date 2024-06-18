@@ -185,7 +185,7 @@ def _insert_mots(conn, **kwargs):
     _add_missing_deps(conn)
 
     # crée une table temporaire pour les mots
-    sql_temp_mot = SQL("""create temp table _mot as
+    s_temp = SQL("""create temp table _mot as
     select 
         d.id as texte,
         f.id as fonction,
@@ -203,8 +203,8 @@ def _insert_mots(conn, **kwargs):
         lexeme jsonb, 
         noyau int
     ) join fonction f on x.fonction = f.nom""")
-    sql_temp_mot = sql_temp_mot.format(doc=qualify(DOC_TABLE))
-    conn.execute(sql_temp_mot)
+    s_temp = s_temp.format(doc=qualify(DOC_TABLE))
+    conn.execute(s_temp)
 
     _insert_lexemes(conn, **kwargs)
 
