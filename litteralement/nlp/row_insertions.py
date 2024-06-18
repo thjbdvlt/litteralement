@@ -124,7 +124,7 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
     # ajoute les propriétés des lexèmes qui sont dans des tables séparées: lemme, nature, morph. (les autres, norme et 'j' ne sont pas des foreign keys mais des valeurs littérales.)
     sql_add_lex_attr = SQL("""
     insert into {tablename} ({col})
-    select distinct lexeme ->> %s from _nouveau_lexeme
+    select distinct lexeme {getter} %s from _nouveau_lexeme
     except select {col} from {tablename}
     """)
 
@@ -133,8 +133,13 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
         if i["is_literal"] is False:
             tablename = i["name"]
             column_value = i["value_column"]
+            if i['datatype'] == 'text':
+                getter = SQL("->>")
+            else:
+                getter = SQL("->")
             stmt = sql_add_lex_attr.format(
                 tablename=Identifier(tablename),
+                getter=getter,
                 col=Identifier(column_value),
             )
             conn.execute(stmt, (tablename,))
