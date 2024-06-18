@@ -126,7 +126,7 @@ create table import._document(
 
 create table import._lookup_entite(
     dataset smallint,
-    id_dataset int,
+    id_dataset text,
     id_entite int
 );
 
@@ -144,7 +144,7 @@ alter table public.prop_int add constraint prop_int_type_fk foreign key (type) r
 alter table public.prop_float add constraint prop_float_type_fk foreign key (type) references onto.type_propriete(id);
 alter table public.prop_date add constraint prop_date_type_fk foreign key (type) references onto.type_propriete(id);
 alter table public.prop_jsonb add constraint prop_jsonb_type_fk foreign key (type) references onto.type_propriete(id);
-alter table public.texte add constraint texte_type_fk foreign key (entite) references onto.type_propriete(id);
+alter table public.texte add constraint texte_type_fk foreign key (type) references onto.type_propriete(id);
 
 -- 4.3
 alter table nlp.token add constraint token_texte_fk foreign key (texte) references texte(id);

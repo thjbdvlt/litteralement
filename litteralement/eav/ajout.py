@@ -164,10 +164,13 @@ def _numerise_row(data, **kwargs):
     dataset = data["dataset"]
 
     # récupère les relations.
-    relations = [
-        _numerise_relation(i, dataset, **kwargs)
-        for i in data["relations"]
-    ]
+    if 'relations' in data:
+        relations = [
+            _numerise_relation(i, dataset, **kwargs)
+            for i in data["relations"]
+        ]
+    else:
+        relations = []
 
     # numérise les entités (trouve les id dans la database).
     entites = [
