@@ -143,6 +143,4 @@ def annoter(
 
     # si le paramètre noinsert est False (défaut), les données sont automatiquement insérées dans les tables.
     if noinsert is False:
-        litteralement.nlp.row_insertions.inserer(
-            conn, **kwargs
-        )
+        litteralement.nlp.row_insertions.inserer(conn, **kwargs)
