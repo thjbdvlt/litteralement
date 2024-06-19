@@ -47,7 +47,6 @@ def todict(
                         "morph": str(token.morph),
                         "norme": token.norm_,
                         "lemme": token.lemma_,
-                        # "j": add_lex_attrs(token)
                     },
                 }
             )
@@ -127,13 +126,11 @@ def annoter(
     )
 
     # placer les documents dans la table import._document (la méthode 'COPY' est beaucoup plus rapide qu'une insertion normale).
-    n = 0
     print("début de l'annotation")
     with cur_send.copy(
         "COPY import._document (j, id) FROM STDIN"
     ) as copy:
         for i in tqdm(docs):
-            n += 1
             doc = todict(i[0], isword=isword, **kwargs)
             row = (json.dumps(doc)), i[1]["id"]
             copy.write_row(row)

@@ -187,8 +187,10 @@ def _insert_mots(conn, **kwargs):
         conn (Connection)
     """
 
+    print(1.1)
     _add_missing_deps(conn)
 
+    print(1.2)
     # crée une table temporaire pour les mots
     s_temp = SQL("""create temp table _mot as
     select 
@@ -211,8 +213,10 @@ def _insert_mots(conn, **kwargs):
     s_temp = s_temp.format(doc=qualify(DOC_TABLE))
     conn.execute(s_temp)
 
+    print(1.3)
     _insert_lexemes(conn, **kwargs)
 
+    print(1.4)
     # crée une table lookup avec deux colonnes: les IDs des lexèmes et leur représentations (textuelle) en JSONB (similaire à celle dans les mots).
     s = SQL("""create temp table id_jsonb_lex as
     select 
@@ -224,6 +228,7 @@ def _insert_mots(conn, **kwargs):
 
     conn.execute(s)
 
+    print(1.5)
     # ajoute les mots
     sql_add_mot = SQL("""
     insert into mot (texte, debut, fin, num, noyau, fonction, lexeme)
@@ -273,7 +278,8 @@ def _insert_tokens(conn, **kwargs):
     """
 
     s = SQL("""
-        insert into token
+        insert into token 
+            (texte, debut, fin, num)
         select
             d.id as texte,
             x.debut,
@@ -327,9 +333,13 @@ def inserer(conn, keep_data=False, **kwargs):
         **kwargs
     """
 
+    print(1)
     _insert_mots(conn, **kwargs)
+    print(2)
     _insert_tokens(conn, **kwargs)
+    print(3)
     _insert_spans(conn, **kwargs)
+    print(4)
     _insert_phrases(conn, **kwargs)
 
     if keep_data is False:
