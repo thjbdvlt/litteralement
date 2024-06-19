@@ -9,6 +9,7 @@ all:
 construire:
 	psql -c 'create database $(dbname)'
 	psql $(dbname) < ./schema/tables.sql
+	psql $(dbname) < ./schema/procedures/importer.sql
 
 venv: .gitignore
 	python -m venv venv
