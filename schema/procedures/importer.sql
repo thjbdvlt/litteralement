@@ -115,6 +115,15 @@ as $$
         join type_propriete y on y.nom = p.type_nom
         where p.datatype = 'number' and regexp_like(p.val ->> 0, '\.');
 
+        -- ajoute les propriétés numériques décimales.
+        insert into propriete (entite, type)
+        select
+            p.entite,
+            y.id as type
+        from _propriete p
+        join type_propriete y on y.nom = p.type_nom
+        where p.datatype = 'null' ;
+
         -- drop les tables temporaires, 
         drop table _propriete;
         drop table _relation_text;
