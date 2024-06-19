@@ -113,19 +113,13 @@ create table nlp.mot (
 
 create schema if not exists import;
 
-create table import._data(
+create table import._entite(
     j jsonb
 );
 
 create table import._document(
     id int,
     j jsonb
-);
-
-create table import._lookup_entite(
-    dataset smallint,
-    id_dataset text,
-    id_entite int
 );
 
 create table import._lookup_ent(import_id text, id int);

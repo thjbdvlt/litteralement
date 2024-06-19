@@ -48,26 +48,26 @@ eav
 importation
 -----------
 
-si l'insertion d'entités, de propriétés ou de relations peut évidemment se faire manuellement, il est aussi possible d'importer des données structurées au format JSON comme suit:
+si l'insertion d'entités, de propriétés ou de relations peut évidemment se faire manuellement, il est aussi possible d'importer des données structurées au format JSON comme suit, chaque ligne décrivant une entité, ses propriétés et les relations dont elle est le sujet.
 
 ```json
+{"id": 1, "classe": "bibliothèque"}
+```
+```json
+{"id": 2, "classe": "lieu", "est_magique": null, "magicité": 1.2}
+```
+```json
 {
-    "dataset": 1,
-    "entites": [
-        {"id": 1, "classe": "bibliothèque"},
-        {"id": 2, "classe": "lieu", "est_magique": null, "magicité": 1.2},
-        {
-            "classe": "personne", "nom": "becky", "relations": [
-                {"type": "fréquente", "objet": 1}
-            ]
-        },
-        {"classe": "livre", "relations": [{"type": "dans", "objet": 1}]},
-    ],
-    "relations": [{"type": "est_dans", "objet": 2, "sujet": 1}]
+    "classe": "personne", "nom": "becky", "relations": [
+        {"type": "fréquente", "objet": 1}
+    ]
 }
 ```
+```json
+{"classe": "livre", "relations": [{"type": "dans", "objet": 1}]},
+```
 
-le seul champ requis est, dans chaque entité, le champ `classe`. le champ `id` permet de définir les relations entre les entités et ne correspond pas à l'`id` de l'entité dans la base de données: il ne doit être unique que dans un `dataset` (spécifié dans le champ `dataset`). dans les entités, tous les champs qui ne sont pas `classe`, `id` ou `relations` sont interprétés comme des propriétés et sont insérées dans les tables qui correspondent au `datatype`:
+le seul champ requis est, dans chaque entité, le champ `classe`. le champ `id` permet de définir les relations entre les entités et ne correspond pas à l'`id` de l'entité dans la base de données. dans les entités, tous les champs qui ne sont pas `classe`, `id` ou `relations` sont interprétés comme des propriétés et sont insérées dans les tables qui correspondent au `datatype`:
 
 ```python
 {"est_magique": None}  # ira dans la table propriete, sans valeur (`null` en JSON!)
@@ -77,15 +77,10 @@ le seul champ requis est, dans chaque entité, le champ `classe`. le champ `id` 
 {"noms": {"prénom": "!", "nom": "?"}}  # ira dans la table prop_json
 ```
 
-l'importation se fait en ajoutant dans la table `import._data` des données au format décrit ci-dessus et en appelant la fonction `importer` qui se trouve dans le module `litteralement.eav`:
+l'importation se fait en ajoutant dans la table `import._entite` des données au format décrit ci-dessus et en utilisant la procedure `import.importer()`:
 
-```python
-import psycopg
-import litteralement.eav.ajout
-
-dbname = "litteralement"
-conn = psycopg.connect(dbname=dbname)
-litteralement.eav.ajout.importer(conn)
+```sql
+call procedure import.importer();
 ```
 
 annoter
