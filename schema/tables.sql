@@ -4,7 +4,7 @@
 
 create schema if not exists nlp;
 create schema if not exists onto;
-alter database litteralement set search_path to public, onto, nlp;
+alter database :DBNAME set search_path to public, onto, nlp;
 create extension vector;
 
 -- 1. EAV

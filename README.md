@@ -48,7 +48,7 @@ eav
 importation
 -----------
 
-si l'insertion d'entités, de propriétés ou de relations peut évidemment se faire manuellement, il est aussi possible d'importer des données structurées au format JSON comme suit, chaque ligne décrivant une entité, ses propriétés et les relations dont elle est le sujet.
+si l'insertion d'entités, de propriétés ou de relations peut évidemment se faire manuellement, il est aussi possible d'importer des données structurées au format JSON comme suit, chaque objet JSON décrivant une entité, ses propriétés et les relations dont elle est le sujet.
 
 ```json
 {"id": 1, "classe": "bibliothèque"}
@@ -67,7 +67,7 @@ si l'insertion d'entités, de propriétés ou de relations peut évidemment se f
 {"classe": "livre", "relations": [{"type": "dans", "objet": 1}]},
 ```
 
-le seul champ requis est, dans chaque entité, le champ `classe`. le champ `id` permet de définir les relations entre les entités et ne correspond pas à l'`id` de l'entité dans la base de données. dans les entités, tous les champs qui ne sont pas `classe`, `id` ou `relations` sont interprétés comme des propriétés et sont insérées dans les tables qui correspondent au `datatype`:
+le seul champ requis est, pour chaque entité, le champ `classe`. le champ `id` permet de définir les relations entre les entités (il ne correspond pas à l'`id` de l'entité dans la base de données). dans les entités, tous les champs qui ne sont pas `classe`, `id` ou `relations` sont interprétés comme des propriétés et sont insérées dans les tables qui correspondent au `datatype`:
 
 ```python
 {"est_magique": None}  # ira dans la table propriete, sans valeur (`null` en JSON!)
