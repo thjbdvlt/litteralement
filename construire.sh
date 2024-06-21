@@ -6,4 +6,4 @@ if [ "$1" == "" ];then
 fi
 
 psql -c "create database $1"
-psql -d "$1" -f ./schema/tables.sql <<< $(cat ./schema/procedures/*.sql)
+psql -d "$1" -f ./schema/tables.sql -f ./schema/procedures/*.sql
