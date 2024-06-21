@@ -25,6 +25,9 @@ create index if not exists lexeme_morph_idx on lexeme(morph);
 create index if not exists lexeme_vv_pos_idx on lexeme(vv_pos);
 create index if not exists lexeme_vv_morph_idx on lexeme(vv_morph);
 
+create index if not exists propriete_entite_idx on propriete(entite);
+create index if not exists propriete_type_idx on propriete(type);
+
 create index if not exists prop_int_entite_idx on prop_int(entite);
 create index if not exists prop_int_type_idx on prop_int(type);
 
@@ -33,3 +36,7 @@ create index if not exists prop_float_type_idx on prop_float(type);
 
 create index if not exists prop_jsonb_entite_idx on prop_jsonb(entite);
 create index if not exists prop_jsonb_type_idx on prop_jsonb(type);
+
+create index if not exists relation_objet_idx on relation(objet);
+create index if not exists relation_sujet_idx on relation(sujet);
+create index if not exists relation_type_idx on relation(type);
