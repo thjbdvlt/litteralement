@@ -109,6 +109,11 @@ create table nlp.mot (
     noyau int not null
 ) inherits (nlp.token);
 
+create table nlp.stopword (
+    norme text,
+    lemme text
+);
+
 
 -- 3. le schéma import sert à ajouter les données.
 
