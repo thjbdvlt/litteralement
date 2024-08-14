@@ -37,7 +37,6 @@ as $$
         -- déplie les relations
         create temp table _relation_text as
         select
-            -- import_id as sujet,
             id as sujet,
             r.*
         from _ent e,
@@ -52,12 +51,10 @@ as $$
         -- ajoute les relations
         insert into relation (sujet, type, objet)
         select
-            -- l1.id as sujet,
             r.sujet,
             y.id as type,
             l2.id as objet
         from _relation_text r
-        -- join import._lookup_ent l1 on l1.import_id = r.sujet
         join import._lookup_ent l2 on l2.import_id = r.objet
         join type_relation y on y.nom = r.type;
 

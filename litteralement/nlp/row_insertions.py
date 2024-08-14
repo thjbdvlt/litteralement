@@ -347,4 +347,3 @@ def inserer(conn, keep_data=False, **kwargs):
         conn.execute(SQL("truncate {}").format(doctable))
 
     conn.commit()
-    conn.close()
