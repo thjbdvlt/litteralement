@@ -40,3 +40,6 @@ create index if not exists prop_jsonb_type_idx on prop_jsonb(type);
 create index if not exists relation_objet_idx on relation(objet);
 create index if not exists relation_sujet_idx on relation(sujet);
 create index if not exists relation_type_idx on relation(type);
+
+create index if not exists morph_feats_idx on morph(feats);
+create index if not exists morph_j_idx on morph(j);
