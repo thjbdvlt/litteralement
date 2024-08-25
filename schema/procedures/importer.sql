@@ -16,9 +16,9 @@ as $$
         from import._entite;
 
         -- ajoute les classes manquantes.
-        insert into classe (nom)
+        insert into onto.classe (nom)
         select distinct classe_nom from _ent
-        except select nom from classe;
+        except select nom from onto.classe;
 
         -- ajoute les entités dans la lookup table.
         insert into import._lookup_ent
@@ -26,12 +26,12 @@ as $$
         select id, import_id from _ent;
 
         -- ajoute les entités
-        insert into entite (id, classe)
+        insert into eav.entite (id, classe)
         select
             e.id as id,
             c.id as classe
         from _ent e
-        join classe c
+        join onto.classe c
         on c.nom = e.classe_nom;
 
         -- déplie les relations

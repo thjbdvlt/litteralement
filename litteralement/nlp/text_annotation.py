@@ -32,11 +32,16 @@ def todict(
     words = []
     nonwords = []
 
+    token_sent_idx = []
+    for n, sent in enumerate(doc.sents, 1):
+        for i in sent:
+            token_sent_idx.append(n)
+
     for token in doc:
         start_char = token.idx + 1
         end_char = start_char + len(token.text)
         i = token.i
-        d = {"debut": start_char, "fin": end_char, "num": i}
+        d = {"debut": start_char, "fin": end_char, "num": i, "phrase": token_sent_idx[i]}
         if isword(token):
             d.update(
                 {

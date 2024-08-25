@@ -101,6 +101,7 @@ create table nlp.span (attrs jsonb) inherits (nlp.segment);
 
 create table nlp.token (
     num int not null,
+    phrase int,
     unique(texte, num)
 ) inherits (nlp.segment);
 

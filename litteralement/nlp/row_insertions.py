@@ -199,6 +199,7 @@ def _insert_mots(conn, **kwargs):
         x.debut,
         x.fin,
         x.num,
+        x.phrase,
         x.lexeme,
         x.noyau
     from {doc} d,
@@ -207,6 +208,7 @@ def _insert_mots(conn, **kwargs):
         debut int, 
         fin int, 
         num int, 
+        phrase int,
         lexeme jsonb, 
         noyau int
     ) join fonction f on x.fonction = f.nom""")
@@ -231,12 +233,13 @@ def _insert_mots(conn, **kwargs):
     print(1.5)
     # ajoute les mots
     sql_add_mot = SQL("""
-    insert into mot (texte, debut, fin, num, noyau, fonction, lexeme)
+    insert into mot (texte, debut, fin, num, phrase, noyau, fonction, lexeme)
     select
         m.texte,
         m.debut,
         m.fin,
         m.num,
+        m.phrase,
         m.noyau,
         m.fonction,
         x.id
@@ -279,17 +282,19 @@ def _insert_tokens(conn, **kwargs):
 
     s = SQL("""
         insert into token 
-            (texte, debut, fin, num)
+            (texte, debut, fin, num, phrase)
         select
             d.id as texte,
             x.debut,
             x.fin,
-            x.num
+            x.num,
+            x.phrase
         from {doc} d,
         jsonb_to_recordset(d.j -> 'nonmots') as x(
             debut integer,
             fin integer,
-            num integer
+            num integer,
+            phrase integer
         );
     """)
 
