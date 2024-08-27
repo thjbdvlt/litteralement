@@ -1,5 +1,3 @@
-dbname=litteralement
-_py=$(CURDIR)/venv/bin/python3
 _pip=$(CURDIR)/venv/bin/pip3
 
 all:
