@@ -3,10 +3,10 @@ from psycopg.sql import SQL, Identifier
 
 UNANNOTATED_TEXTS = """
 with unannotated as (
-    select t.id from texte t
+    select t.id from eav.texte t
     except
-    select distinct s.texte from segment s
-) select t.id, t.val from texte t
+    select distinct s.texte from li.segment s
+) select t.id, t.val from eav.texte t
 join unannotated u on u.id = t.id;
 """
 
@@ -101,7 +101,7 @@ def select_values_fk(table, cols, rev=False):
         {"name": "lemme", "is_literal": True, "value_column": "graphie"}
     """
 
-    table = Identifier(table)
+    table = qualify(table)
     values = []
     joins = []
     stmt_val = SQL("{table}.{col} as {name}")
