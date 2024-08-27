@@ -72,7 +72,7 @@ CREATE PROCEDURE import.importer()
         -- crée une table temporaire pour préparer l'insertion des entités, de leurs propriétés et de leurs relations. cette première table sépare les champs "id", "classe", "relations" et "proprietes", qui requierent tous des traitements différents.
         create temp table _ent as 
         select 
-            nextval('entite_id_seq') as id,
+            nextval('eav.entite_id_seq') as id,
             j ->> 'id' as import_id,
             j ->> 'classe' as classe_nom,
             j -> 'relations' as relations,
@@ -496,6 +496,7 @@ CREATE TABLE nlp.mot (
     noyau integer NOT NULL
 )
 INHERITS (nlp.token);
+ALTER TABLE ONLY nlp.mot ALTER COLUMN phrase SET NOT NULL;
 
 
 --
