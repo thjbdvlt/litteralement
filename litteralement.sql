@@ -22,6 +22,8 @@ SET row_security = off;
 
 CREATE SCHEMA eav;
 
+CREATE SCHEMA li;
+
 
 --
 -- Name: import; Type: SCHEMA; Schema: -; Owner: -
@@ -31,24 +33,10 @@ CREATE SCHEMA import;
 
 
 --
--- Name: nlp; Type: SCHEMA; Schema: -; Owner: -
---
-
-CREATE SCHEMA nlp;
-
-
---
--- Name: onto; Type: SCHEMA; Schema: -; Owner: -
---
-
-CREATE SCHEMA onto;
-
-
---
 -- Name: vector; Type: EXTENSION; Schema: -; Owner: -
 --
 
-CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA li;
 
 
 --
@@ -80,9 +68,9 @@ CREATE PROCEDURE import.importer()
         from import._entite;
 
         -- ajoute les classes manquantes.
-        insert into onto.classe (nom)
+        insert into eav.classe (nom)
         select distinct classe_nom from _ent
-        except select nom from onto.classe;
+        except select nom from eav.classe;
 
         -- ajoute les entités dans la lookup table.
         insert into import._lookup_ent
@@ -95,7 +83,7 @@ CREATE PROCEDURE import.importer()
             e.id as id,
             c.id as classe
         from _ent e
-        join onto.classe c
+        join eav.classe c
         on c.nom = e.classe_nom;
 
         -- déplie les relations
@@ -107,20 +95,20 @@ CREATE PROCEDURE import.importer()
         jsonb_to_recordset(e.relations) as r(type text, objet text);
 
         -- ajoute les types de relations
-        insert into type_relation (nom)
+        insert into eav.type_relation (nom)
         select distinct type from _relation_text
         except
-        select nom from type_relation;
+        select nom from eav.type_relation;
 
         -- ajoute les relations
-        insert into relation (sujet, type, objet)
+        insert into eav.relation (sujet, type, objet)
         select
             r.sujet,
             y.id as type,
             l2.id as objet
         from _relation_text r
         join import._lookup_ent l2 on l2.import_id = r.objet
-        join type_relation y on y.nom = r.type;
+        join eav.type_relation y on y.nom = r.type;
 
         -- déplie les propriétés dans un format key/value (deux colonnes), ajoute le 'datatype' jsonb (string, array, object, number), duquel va dépendre la sous-tablede propriété dans laquelle chaque propriété va aller.
         create temp table _propriete as
@@ -133,58 +121,58 @@ CREATE PROCEDURE import.importer()
         jsonb_each(e.proprietes);
 
         -- ajoute les types de propriétés
-        insert into type_propriete (nom)
+        insert into eav.type_propriete (nom)
         select distinct type_nom from _propriete
         except
-        select nom from type_propriete;
+        select nom from eav.type_propriete;
 
         -- ajoute les textes (les propriétés de datatype string).
-        insert into texte (entite, type, val)
+        insert into eav.texte (entite, type, val)
         select
             p.entite,
             y.id as type,
             p.val ->> 0 as val
         from _propriete p
-        join type_propriete y on y.nom = p.type_nom
+        join eav.type_propriete y on y.nom = p.type_nom
         where p.datatype = 'string';
 
         -- ajoute les propriétés à valeur jsonb (array/object).
-        insert into prop_jsonb (entite, type, val)
+        insert into eav.prop_jsonb (entite, type, val)
         select
             p.entite,
             y.id as type,
             p.val -> 0 as val
         from _propriete p
-        join type_propriete y on y.nom = p.type_nom
+        join eav.type_propriete y on y.nom = p.type_nom
         where p.datatype in ('array', 'object');
 
         -- ajoute les propriétés numériques entières.
-        insert into prop_int (entite, type, val)
+        insert into eav.prop_int (entite, type, val)
         select
             p.entite,
             y.id as type,
             (p.val -> 0)::integer as val
         from _propriete p
-        join type_propriete y on y.nom = p.type_nom
+        join eav.type_propriete y on y.nom = p.type_nom
         where p.datatype = 'number' and not regexp_like(p.val ->> 0, '\.');
 
         -- ajoute les propriétés numériques décimales.
-        insert into prop_float (entite, type, val)
+        insert into eav.prop_float (entite, type, val)
         select
             p.entite,
             y.id as type,
             (p.val -> 0)::float as val
         from _propriete p
-        join type_propriete y on y.nom = p.type_nom
+        join eav.type_propriete y on y.nom = p.type_nom
         where p.datatype = 'number' and regexp_like(p.val ->> 0, '\.');
 
         -- ajoute les propriétés numériques décimales.
-        insert into propriete (entite, type)
+        insert into eav.propriete (entite, type)
         select
             p.entite,
             y.id as type
         from _propriete p
-        join type_propriete y on y.nom = p.type_nom
+        join eav.type_propriete y on y.nom = p.type_nom
         where p.datatype = 'null' ;
 
         -- drop les tables temporaires, 
@@ -200,10 +188,10 @@ $$;
 
 
 --
--- Name: feats_to_json(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: feats_to_json(); Type: FUNCTION; Schema: li; Owner: -
 --
 
-CREATE FUNCTION public.feats_to_json() RETURNS trigger
+CREATE FUNCTION li.feats_to_json() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 begin
@@ -364,10 +352,10 @@ CREATE TABLE import._lookup_ent (
 
 
 --
--- Name: fonction; Type: TABLE; Schema: nlp; Owner: -
+-- Name: fonction; Type: TABLE; Schema: li; Owner: -
 --
 
-CREATE TABLE nlp.fonction (
+CREATE TABLE li.fonction (
     id smallint NOT NULL,
     nom text NOT NULL,
     definition text
@@ -378,8 +366,8 @@ CREATE TABLE nlp.fonction (
 -- Name: fonction_id_seq; Type: SEQUENCE; Schema: nlp; Owner: -
 --
 
-ALTER TABLE nlp.fonction ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
-    SEQUENCE NAME nlp.fonction_id_seq
+ALTER TABLE li.fonction ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME li.fonction_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -392,7 +380,7 @@ ALTER TABLE nlp.fonction ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 -- Name: lemme; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.lemme (
+CREATE TABLE li.lemme (
     id integer NOT NULL,
     graphie text NOT NULL
 );
@@ -402,8 +390,8 @@ CREATE TABLE nlp.lemme (
 -- Name: lemme_id_seq; Type: SEQUENCE; Schema: nlp; Owner: -
 --
 
-ALTER TABLE nlp.lemme ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
-    SEQUENCE NAME nlp.lemme_id_seq
+ALTER TABLE li.lemme ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME li.lemme_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -416,7 +404,7 @@ ALTER TABLE nlp.lemme ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 -- Name: lexeme; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.lexeme (
+CREATE TABLE li.lexeme (
     id integer NOT NULL,
     lemme integer NOT NULL,
     nature smallint NOT NULL,
@@ -429,8 +417,8 @@ CREATE TABLE nlp.lexeme (
 -- Name: lexeme_id_seq; Type: SEQUENCE; Schema: nlp; Owner: -
 --
 
-ALTER TABLE nlp.lexeme ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
-    SEQUENCE NAME nlp.lexeme_id_seq
+ALTER TABLE li.lexeme ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME li.lexeme_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -443,7 +431,7 @@ ALTER TABLE nlp.lexeme ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 -- Name: morph; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.morph (
+CREATE TABLE li.morph (
     id smallint NOT NULL,
     feats text,
     j jsonb
@@ -454,8 +442,8 @@ CREATE TABLE nlp.morph (
 -- Name: morph_id_seq; Type: SEQUENCE; Schema: nlp; Owner: -
 --
 
-ALTER TABLE nlp.morph ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
-    SEQUENCE NAME nlp.morph_id_seq
+ALTER TABLE li.morph ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME li.morph_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -468,7 +456,7 @@ ALTER TABLE nlp.morph ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 -- Name: segment; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.segment (
+CREATE TABLE li.segment (
     texte integer NOT NULL,
     debut integer NOT NULL,
     fin integer NOT NULL
@@ -479,31 +467,31 @@ CREATE TABLE nlp.segment (
 -- Name: token; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.token (
+CREATE TABLE li.token (
     num integer NOT NULL,
     phrase integer
 )
-INHERITS (nlp.segment);
+INHERITS (li.segment);
 
 
 --
 -- Name: mot; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.mot (
+CREATE TABLE li.mot (
     fonction smallint NOT NULL,
     lexeme integer NOT NULL,
     noyau integer NOT NULL
 )
-INHERITS (nlp.token);
-ALTER TABLE ONLY nlp.mot ALTER COLUMN phrase SET NOT NULL;
+INHERITS (li.token);
+ALTER TABLE ONLY li.mot ALTER COLUMN phrase SET NOT NULL;
 
 
 --
 -- Name: nature; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.nature (
+CREATE TABLE li.nature (
     id smallint NOT NULL,
     nom text NOT NULL,
     definition text
@@ -514,8 +502,8 @@ CREATE TABLE nlp.nature (
 -- Name: nature_id_seq; Type: SEQUENCE; Schema: nlp; Owner: -
 --
 
-ALTER TABLE nlp.nature ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
-    SEQUENCE NAME nlp.nature_id_seq
+ALTER TABLE li.nature ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME li.nature_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -528,7 +516,7 @@ ALTER TABLE nlp.nature ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 -- Name: stopword; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.stopword (
+CREATE TABLE li.stopword (
     norme text,
     lemme text
 );
@@ -538,33 +526,33 @@ CREATE TABLE nlp.stopword (
 -- Name: nonstop_lemme; Type: VIEW; Schema: nlp; Owner: -
 --
 
-CREATE VIEW nlp.nonstop_lemme AS
+CREATE VIEW li.nonstop_lemme AS
  WITH nonstop AS (
          SELECT l_1.id
-           FROM nlp.lemme l_1
+           FROM li.lemme l_1
         EXCEPT
          SELECT l_1.id
-           FROM (nlp.lemme l_1
-             JOIN nlp.stopword s ON ((s.lemme = l_1.graphie)))
+           FROM (li.lemme l_1
+             JOIN li.stopword s ON ((s.lemme = l_1.graphie)))
         )
  SELECT l.id,
     l.graphie
    FROM (nonstop n
-     JOIN nlp.lemme l ON ((l.id = n.id)));
+     JOIN li.lemme l ON ((l.id = n.id)));
 
 
 --
 -- Name: nonstop_lexeme; Type: VIEW; Schema: nlp; Owner: -
 --
 
-CREATE VIEW nlp.nonstop_lexeme AS
+CREATE VIEW li.nonstop_lexeme AS
  WITH nonstop AS (
          SELECT l_1.id
-           FROM nlp.lexeme l_1
+           FROM li.lexeme l_1
         EXCEPT
          SELECT l_1.id
-           FROM (nlp.lexeme l_1
-             JOIN nlp.stopword s ON ((s.norme = l_1.norme)))
+           FROM (li.lexeme l_1
+             JOIN li.stopword s ON ((s.norme = l_1.norme)))
         )
  SELECT l.id,
     l.lemme,
@@ -572,33 +560,33 @@ CREATE VIEW nlp.nonstop_lexeme AS
     l.morph,
     l.norme
    FROM (nonstop n
-     JOIN nlp.lexeme l ON ((l.id = n.id)));
+     JOIN li.lexeme l ON ((l.id = n.id)));
 
 
 --
 -- Name: phrase; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.phrase (
+CREATE TABLE li.phrase (
 )
-INHERITS (nlp.segment);
+INHERITS (li.segment);
 
 
 --
 -- Name: span; Type: TABLE; Schema: nlp; Owner: -
 --
 
-CREATE TABLE nlp.span (
+CREATE TABLE li.span (
     attrs jsonb
 )
-INHERITS (nlp.segment);
+INHERITS (li.segment);
 
 
 --
 -- Name: classe; Type: TABLE; Schema: onto; Owner: -
 --
 
-CREATE TABLE onto.classe (
+CREATE TABLE eav.classe (
     id smallint NOT NULL,
     nom text NOT NULL,
     definition text
@@ -609,8 +597,8 @@ CREATE TABLE onto.classe (
 -- Name: classe_id_seq; Type: SEQUENCE; Schema: onto; Owner: -
 --
 
-ALTER TABLE onto.classe ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
-    SEQUENCE NAME onto.classe_id_seq
+ALTER TABLE eav.classe ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME eav.classe_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -623,7 +611,7 @@ ALTER TABLE onto.classe ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
 -- Name: type_propriete; Type: TABLE; Schema: onto; Owner: -
 --
 
-CREATE TABLE onto.type_propriete (
+CREATE TABLE eav.type_propriete (
     id smallint NOT NULL,
     nom text NOT NULL,
     definition text
@@ -634,8 +622,8 @@ CREATE TABLE onto.type_propriete (
 -- Name: type_propriete_id_seq; Type: SEQUENCE; Schema: onto; Owner: -
 --
 
-ALTER TABLE onto.type_propriete ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
-    SEQUENCE NAME onto.type_propriete_id_seq
+ALTER TABLE eav.type_propriete ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME eav.type_propriete_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -648,7 +636,7 @@ ALTER TABLE onto.type_propriete ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDEN
 -- Name: type_relation; Type: TABLE; Schema: onto; Owner: -
 --
 
-CREATE TABLE onto.type_relation (
+CREATE TABLE eav.type_relation (
     id smallint NOT NULL,
     nom text NOT NULL,
     definition text
@@ -659,8 +647,8 @@ CREATE TABLE onto.type_relation (
 -- Name: type_relation_id_seq; Type: SEQUENCE; Schema: onto; Owner: -
 --
 
-ALTER TABLE onto.type_relation ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
-    SEQUENCE NAME onto.type_relation_id_seq
+ALTER TABLE eav.type_relation ALTER COLUMN id ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME eav.type_relation_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -689,7 +677,7 @@ ALTER TABLE ONLY eav.texte
 -- Name: fonction fonction_nom_key; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.fonction
+ALTER TABLE ONLY li.fonction
     ADD CONSTRAINT fonction_nom_key UNIQUE (nom);
 
 
@@ -697,7 +685,7 @@ ALTER TABLE ONLY nlp.fonction
 -- Name: fonction fonction_pkey; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.fonction
+ALTER TABLE ONLY li.fonction
     ADD CONSTRAINT fonction_pkey PRIMARY KEY (id);
 
 
@@ -705,7 +693,7 @@ ALTER TABLE ONLY nlp.fonction
 -- Name: lemme lemme_graphie_key; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.lemme
+ALTER TABLE ONLY li.lemme
     ADD CONSTRAINT lemme_graphie_key UNIQUE (graphie);
 
 
@@ -713,7 +701,7 @@ ALTER TABLE ONLY nlp.lemme
 -- Name: lemme lemme_pkey; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.lemme
+ALTER TABLE ONLY li.lemme
     ADD CONSTRAINT lemme_pkey PRIMARY KEY (id);
 
 
@@ -721,7 +709,7 @@ ALTER TABLE ONLY nlp.lemme
 -- Name: lexeme lexeme_pkey; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.lexeme
+ALTER TABLE ONLY li.lexeme
     ADD CONSTRAINT lexeme_pkey PRIMARY KEY (id);
 
 
@@ -729,7 +717,7 @@ ALTER TABLE ONLY nlp.lexeme
 -- Name: morph morph_feats_key; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.morph
+ALTER TABLE ONLY li.morph
     ADD CONSTRAINT morph_feats_key UNIQUE (feats);
 
 
@@ -737,7 +725,7 @@ ALTER TABLE ONLY nlp.morph
 -- Name: morph morph_pkey; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.morph
+ALTER TABLE ONLY li.morph
     ADD CONSTRAINT morph_pkey PRIMARY KEY (id);
 
 
@@ -745,7 +733,7 @@ ALTER TABLE ONLY nlp.morph
 -- Name: nature nature_nom_key; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.nature
+ALTER TABLE ONLY li.nature
     ADD CONSTRAINT nature_nom_key UNIQUE (nom);
 
 
@@ -753,7 +741,7 @@ ALTER TABLE ONLY nlp.nature
 -- Name: nature nature_pkey; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.nature
+ALTER TABLE ONLY li.nature
     ADD CONSTRAINT nature_pkey PRIMARY KEY (id);
 
 
@@ -761,7 +749,7 @@ ALTER TABLE ONLY nlp.nature
 -- Name: token token_texte_num_key; Type: CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.token
+ALTER TABLE ONLY li.token
     ADD CONSTRAINT token_texte_num_key UNIQUE (texte, num);
 
 
@@ -769,7 +757,7 @@ ALTER TABLE ONLY nlp.token
 -- Name: classe classe_nom_key; Type: CONSTRAINT; Schema: onto; Owner: -
 --
 
-ALTER TABLE ONLY onto.classe
+ALTER TABLE ONLY eav.classe
     ADD CONSTRAINT classe_nom_key UNIQUE (nom);
 
 
@@ -777,7 +765,7 @@ ALTER TABLE ONLY onto.classe
 -- Name: classe classe_pkey; Type: CONSTRAINT; Schema: onto; Owner: -
 --
 
-ALTER TABLE ONLY onto.classe
+ALTER TABLE ONLY eav.classe
     ADD CONSTRAINT classe_pkey PRIMARY KEY (id);
 
 
@@ -785,7 +773,7 @@ ALTER TABLE ONLY onto.classe
 -- Name: type_propriete type_propriete_nom_key; Type: CONSTRAINT; Schema: onto; Owner: -
 --
 
-ALTER TABLE ONLY onto.type_propriete
+ALTER TABLE ONLY eav.type_propriete
     ADD CONSTRAINT type_propriete_nom_key UNIQUE (nom);
 
 
@@ -793,7 +781,7 @@ ALTER TABLE ONLY onto.type_propriete
 -- Name: type_propriete type_propriete_pkey; Type: CONSTRAINT; Schema: onto; Owner: -
 --
 
-ALTER TABLE ONLY onto.type_propriete
+ALTER TABLE ONLY eav.type_propriete
     ADD CONSTRAINT type_propriete_pkey PRIMARY KEY (id);
 
 
@@ -801,7 +789,7 @@ ALTER TABLE ONLY onto.type_propriete
 -- Name: type_relation type_relation_nom_key; Type: CONSTRAINT; Schema: onto; Owner: -
 --
 
-ALTER TABLE ONLY onto.type_relation
+ALTER TABLE ONLY eav.type_relation
     ADD CONSTRAINT type_relation_nom_key UNIQUE (nom);
 
 
@@ -809,7 +797,7 @@ ALTER TABLE ONLY onto.type_relation
 -- Name: type_relation type_relation_pkey; Type: CONSTRAINT; Schema: onto; Owner: -
 --
 
-ALTER TABLE ONLY onto.type_relation
+ALTER TABLE ONLY eav.type_relation
     ADD CONSTRAINT type_relation_pkey PRIMARY KEY (id);
 
 
@@ -915,119 +903,119 @@ CREATE INDEX texte_type_idx ON eav.texte USING btree (type);
 -- Name: fonction_nom_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX fonction_nom_idx ON nlp.fonction USING btree (nom);
+CREATE INDEX fonction_nom_idx ON li.fonction USING btree (nom);
 
 
 --
 -- Name: lexeme_lemme_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX lexeme_lemme_idx ON nlp.lexeme USING btree (lemme);
+CREATE INDEX lexeme_lemme_idx ON li.lexeme USING btree (lemme);
 
 
 --
 -- Name: lexeme_morph_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX lexeme_morph_idx ON nlp.lexeme USING btree (morph);
+CREATE INDEX lexeme_morph_idx ON li.lexeme USING btree (morph);
 
 
 --
 -- Name: lexeme_nature_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX lexeme_nature_idx ON nlp.lexeme USING btree (nature);
+CREATE INDEX lexeme_nature_idx ON li.lexeme USING btree (nature);
 
 
 --
 -- Name: morph_feats_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX morph_feats_idx ON nlp.morph USING btree (feats);
+CREATE INDEX morph_feats_idx ON li.morph USING btree (feats);
 
 
 --
 -- Name: morph_j_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX morph_j_idx ON nlp.morph USING btree (j);
+CREATE INDEX morph_j_idx ON li.morph USING btree (j);
 
 
 --
 -- Name: mot_fonction_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX mot_fonction_idx ON nlp.mot USING btree (fonction);
+CREATE INDEX mot_fonction_idx ON li.mot USING btree (fonction);
 
 
 --
 -- Name: mot_lexeme_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX mot_lexeme_idx ON nlp.mot USING btree (lexeme);
+CREATE INDEX mot_lexeme_idx ON li.mot USING btree (lexeme);
 
 
 --
 -- Name: mot_texte_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX mot_texte_idx ON nlp.mot USING btree (texte);
+CREATE INDEX mot_texte_idx ON li.mot USING btree (texte);
 
 
 --
 -- Name: nature_nom_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX nature_nom_idx ON nlp.nature USING btree (nom);
+CREATE INDEX nature_nom_idx ON li.nature USING btree (nom);
 
 
 --
 -- Name: phrase_texte_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX phrase_texte_idx ON nlp.phrase USING btree (texte);
+CREATE INDEX phrase_texte_idx ON li.phrase USING btree (texte);
 
 
 --
 -- Name: segment_texte_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX segment_texte_idx ON nlp.segment USING btree (texte);
+CREATE INDEX segment_texte_idx ON li.segment USING btree (texte);
 
 
 --
 -- Name: token_texte_idx; Type: INDEX; Schema: nlp; Owner: -
 --
 
-CREATE INDEX token_texte_idx ON nlp.token USING btree (texte);
+CREATE INDEX token_texte_idx ON li.token USING btree (texte);
 
 
 --
 -- Name: classe_nom_idx; Type: INDEX; Schema: onto; Owner: -
 --
 
-CREATE INDEX classe_nom_idx ON onto.classe USING btree (nom);
+CREATE INDEX classe_nom_idx ON eav.classe USING btree (nom);
 
 
 --
 -- Name: type_propriete_nom_idx; Type: INDEX; Schema: onto; Owner: -
 --
 
-CREATE INDEX type_propriete_nom_idx ON onto.type_propriete USING btree (nom);
+CREATE INDEX type_propriete_nom_idx ON eav.type_propriete USING btree (nom);
 
 
 --
 -- Name: type_relation_nom_idx; Type: INDEX; Schema: onto; Owner: -
 --
 
-CREATE INDEX type_relation_nom_idx ON onto.type_relation USING btree (nom);
+CREATE INDEX type_relation_nom_idx ON eav.type_relation USING btree (nom);
 
 
 --
 -- Name: morph jsonize_feats; Type: TRIGGER; Schema: nlp; Owner: -
 --
 
-CREATE TRIGGER jsonize_feats AFTER INSERT OR UPDATE OF feats ON nlp.morph FOR EACH ROW EXECUTE FUNCTION public.feats_to_json();
+CREATE TRIGGER jsonize_feats AFTER INSERT OR UPDATE OF feats ON li.morph FOR EACH ROW EXECUTE FUNCTION li.feats_to_json();
 
 
 --
@@ -1035,7 +1023,7 @@ CREATE TRIGGER jsonize_feats AFTER INSERT OR UPDATE OF feats ON nlp.morph FOR EA
 --
 
 ALTER TABLE ONLY eav.entite
-    ADD CONSTRAINT entite_classe_fkey FOREIGN KEY (classe) REFERENCES onto.classe(id);
+    ADD CONSTRAINT entite_classe_fkey FOREIGN KEY (classe) REFERENCES eav.classe(id);
 
 
 --
@@ -1051,7 +1039,7 @@ ALTER TABLE ONLY eav.prop_date
 --
 
 ALTER TABLE ONLY eav.prop_date
-    ADD CONSTRAINT prop_date_type_fk FOREIGN KEY (type) REFERENCES onto.type_propriete(id);
+    ADD CONSTRAINT prop_date_type_fk FOREIGN KEY (type) REFERENCES eav.type_propriete(id);
 
 
 --
@@ -1067,7 +1055,7 @@ ALTER TABLE ONLY eav.prop_float
 --
 
 ALTER TABLE ONLY eav.prop_float
-    ADD CONSTRAINT prop_float_type_fk FOREIGN KEY (type) REFERENCES onto.type_propriete(id);
+    ADD CONSTRAINT prop_float_type_fk FOREIGN KEY (type) REFERENCES eav.type_propriete(id);
 
 
 --
@@ -1083,7 +1071,7 @@ ALTER TABLE ONLY eav.prop_int
 --
 
 ALTER TABLE ONLY eav.prop_int
-    ADD CONSTRAINT prop_int_type_fk FOREIGN KEY (type) REFERENCES onto.type_propriete(id);
+    ADD CONSTRAINT prop_int_type_fk FOREIGN KEY (type) REFERENCES eav.type_propriete(id);
 
 
 --
@@ -1099,7 +1087,7 @@ ALTER TABLE ONLY eav.prop_jsonb
 --
 
 ALTER TABLE ONLY eav.prop_jsonb
-    ADD CONSTRAINT prop_jsonb_type_fk FOREIGN KEY (type) REFERENCES onto.type_propriete(id);
+    ADD CONSTRAINT prop_jsonb_type_fk FOREIGN KEY (type) REFERENCES eav.type_propriete(id);
 
 
 --
@@ -1115,7 +1103,7 @@ ALTER TABLE ONLY eav.propriete
 --
 
 ALTER TABLE ONLY eav.propriete
-    ADD CONSTRAINT propriete_type_fkey FOREIGN KEY (type) REFERENCES onto.type_propriete(id);
+    ADD CONSTRAINT propriete_type_fkey FOREIGN KEY (type) REFERENCES eav.type_propriete(id);
 
 
 --
@@ -1139,7 +1127,7 @@ ALTER TABLE ONLY eav.relation
 --
 
 ALTER TABLE ONLY eav.relation
-    ADD CONSTRAINT relation_type_fkey FOREIGN KEY (type) REFERENCES onto.type_relation(id);
+    ADD CONSTRAINT relation_type_fkey FOREIGN KEY (type) REFERENCES eav.type_relation(id);
 
 
 --
@@ -1155,54 +1143,54 @@ ALTER TABLE ONLY eav.texte
 --
 
 ALTER TABLE ONLY eav.texte
-    ADD CONSTRAINT texte_type_fk FOREIGN KEY (type) REFERENCES onto.type_propriete(id);
+    ADD CONSTRAINT texte_type_fk FOREIGN KEY (type) REFERENCES eav.type_propriete(id);
 
 
 --
 -- Name: lexeme lexeme_lemme_fkey; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.lexeme
-    ADD CONSTRAINT lexeme_lemme_fkey FOREIGN KEY (lemme) REFERENCES nlp.lemme(id);
+ALTER TABLE ONLY li.lexeme
+    ADD CONSTRAINT lexeme_lemme_fkey FOREIGN KEY (lemme) REFERENCES li.lemme(id);
 
 
 --
 -- Name: lexeme lexeme_morph_fkey; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.lexeme
-    ADD CONSTRAINT lexeme_morph_fkey FOREIGN KEY (morph) REFERENCES nlp.morph(id);
+ALTER TABLE ONLY li.lexeme
+    ADD CONSTRAINT lexeme_morph_fkey FOREIGN KEY (morph) REFERENCES li.morph(id);
 
 
 --
 -- Name: lexeme lexeme_nature_fkey; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.lexeme
-    ADD CONSTRAINT lexeme_nature_fkey FOREIGN KEY (nature) REFERENCES nlp.nature(id);
+ALTER TABLE ONLY li.lexeme
+    ADD CONSTRAINT lexeme_nature_fkey FOREIGN KEY (nature) REFERENCES li.nature(id);
 
 
 --
 -- Name: mot mot_fonction_fkey; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.mot
-    ADD CONSTRAINT mot_fonction_fkey FOREIGN KEY (fonction) REFERENCES nlp.fonction(id);
+ALTER TABLE ONLY li.mot
+    ADD CONSTRAINT mot_fonction_fkey FOREIGN KEY (fonction) REFERENCES li.fonction(id);
 
 
 --
 -- Name: mot mot_lexeme_fkey; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.mot
-    ADD CONSTRAINT mot_lexeme_fkey FOREIGN KEY (lexeme) REFERENCES nlp.lexeme(id);
+ALTER TABLE ONLY li.mot
+    ADD CONSTRAINT mot_lexeme_fkey FOREIGN KEY (lexeme) REFERENCES li.lexeme(id);
 
 
 --
 -- Name: mot mot_texte_fk; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.mot
+ALTER TABLE ONLY li.mot
     ADD CONSTRAINT mot_texte_fk FOREIGN KEY (texte) REFERENCES eav.texte(id);
 
 
@@ -1210,7 +1198,7 @@ ALTER TABLE ONLY nlp.mot
 -- Name: phrase phrase_texte_fk; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.phrase
+ALTER TABLE ONLY li.phrase
     ADD CONSTRAINT phrase_texte_fk FOREIGN KEY (texte) REFERENCES eav.texte(id);
 
 
@@ -1218,7 +1206,7 @@ ALTER TABLE ONLY nlp.phrase
 -- Name: span phrase_texte_fk; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.span
+ALTER TABLE ONLY li.span
     ADD CONSTRAINT phrase_texte_fk FOREIGN KEY (texte) REFERENCES eav.texte(id);
 
 
@@ -1226,7 +1214,7 @@ ALTER TABLE ONLY nlp.span
 -- Name: segment segment_texte_fkey; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.segment
+ALTER TABLE ONLY li.segment
     ADD CONSTRAINT segment_texte_fkey FOREIGN KEY (texte) REFERENCES eav.texte(id);
 
 
@@ -1234,7 +1222,7 @@ ALTER TABLE ONLY nlp.segment
 -- Name: token token_texte_fk; Type: FK CONSTRAINT; Schema: nlp; Owner: -
 --
 
-ALTER TABLE ONLY nlp.token
+ALTER TABLE ONLY li.token
     ADD CONSTRAINT token_texte_fk FOREIGN KEY (texte) REFERENCES eav.texte(id);
 
 
