@@ -22,8 +22,6 @@ create index if not exists mot_texte_idx on mot(texte);
 create index if not exists lexeme_lemme_idx on lexeme(lemme);
 create index if not exists lexeme_nature_idx on lexeme(nature);
 create index if not exists lexeme_morph_idx on lexeme(morph);
-create index if not exists lexeme_vv_pos_idx on lexeme(vv_pos);
-create index if not exists lexeme_vv_morph_idx on lexeme(vv_morph);
 
 create index if not exists propriete_entite_idx on propriete(entite);
 create index if not exists propriete_type_idx on propriete(type);

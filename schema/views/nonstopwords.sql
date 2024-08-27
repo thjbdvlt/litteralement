@@ -7,7 +7,7 @@ with nonstop as (
     except
     select l.id
     from nlp.lemme l
-    join stopword s on s.lemme = l.graphie
+    join nlp.stopword s on s.lemme = l.graphie
 )
 select
     l.*

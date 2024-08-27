@@ -4,12 +4,6 @@ _pip=$(CURDIR)/venv/bin/pip3
 
 all:
 	make .gitignore
-	make construire
-
-construire:
-	psql -c 'create database $(dbname)'
-	psql $(dbname) < ./schema/tables.sql
-	psql $(dbname) < ./schema/procedures/importer.sql
 
 venv: .gitignore
 	python -m venv venv
