@@ -265,9 +265,9 @@ from mot m2
 join lexeme x2 on m2.lexeme = x2.id
 join lexeme x1 on $1.lexeme = x1.id
 join nature n on n.id = x1.id
-join fonction f on f.id = x1.id
+join fonction f on f.id = $1.fonction
 where $1.texte = m2.texte and $1.num = m2.noyau
-and (n.nom = 'aux' or f.nom like 'aux:%')
+and (n.nom in ('aux', 'verb') or f.nom like 'aux:%')
 $_$;
 
 
