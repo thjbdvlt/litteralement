@@ -253,6 +253,25 @@ ALTER TABLE ONLY li.mot ALTER COLUMN phrase SET NOT NULL;
 
 
 --
+-- Name: has_aux(li.mot); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.has_aux(li.mot) RETURNS li.mot
+    LANGUAGE sql
+    AS $_$
+select
+    m2
+from mot m2
+join lexeme x2 on m2.lexeme = x2.id
+join lexeme x1 on $1.lexeme = x1.id
+join nature n on n.id = x1.id
+join fonction f on f.id = x1.id
+where $1.texte = m2.texte and $1.num = m2.noyau
+and (n.nom = 'aux' or f.nom like 'aux:%')
+$_$;
+
+
+--
 -- Name: has_head(li.mot); Type: FUNCTION; Schema: public; Owner: -
 --
 
