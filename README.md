@@ -1,11 +1,13 @@
 littéralement
 =============
 
-__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) conçu pour l'analyse de texte en français et construit selon un modèle générique (EAV) hybride.
+__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) conçu pour l'analyse de texte en français.
+
+il y a en fait deux _schémas_: l'un pour les annotations de textes (_mot_, _lexeme_, _morphologie_, etc.) et l'un pour les objets du mondes (qui contiennent les textes). les deux sont indépendants, et le schéma d'annotation de texte (__litteralement__) peut donc être simplement ajouté à une base de données existante. le second implémente un modèle générique (EAV) assez simple, mais propose des fonctions d'importations qui permettent de simplifier l'usage d'un tel modèle. ensemble, ces deux schémas constituent donc un modèle générique (EAV) hybride.
 
 le modèle générique que j'utilise comme base, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.
 
-au schéma de la base de données s'ajoutent des modules Python qui permettent, entre autres choses, de facilement [importer](./litteralement/eav/ajout.py) des données, de les [annoter](./litteralement/nlp) à l'aide de la librairie [spacy](https://spacy.io/) et d'insérer les annotations dans la base de données.
+à ces schémas s'ajoutent des modules Python qui permettent, entre autres choses, de facilement [importer](./litteralement/eav/ajout.py) des données, de les [annoter](./litteralement/nlp) à l'aide de la librairie [spacy](https://spacy.io/) et d'insérer les annotations dans la base de données.
 
 [^1]: Francesco Beretta, "Des sources aux données structurées", 14 octobre 2022, [En ligne](https://wiki-arhn.larhra.fr/lib/exe/fetch.php?media=intro_histoire_numerique:beretta_des_sources_aux_donnees_3-8.pdf), license CC BY-SA 4.0.
 
