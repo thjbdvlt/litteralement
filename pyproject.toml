@@ -8,6 +8,7 @@ requires-python = ">=3.9"
 dependencies = [
     "psycopg",
     "spacy",
+    "tqdm",
 ]
 
 [project.urls]
