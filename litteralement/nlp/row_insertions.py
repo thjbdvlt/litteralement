@@ -4,6 +4,7 @@ from litteralement.util.statements import qualify
 from litteralement.util.tables import DOC_TABLE
 from litteralement.util.tables import LEXEME_ATTRS
 from litteralement.util.tables import LEXEME_TEXT_TABLE
+from litteralement.util.tables import SCHEMA
 
 
 def add_user_defined_columns(conn, table, userattrs):
@@ -78,8 +79,6 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
         {"name": "alt_pos", "is_literal": True; "datatype": "text"}
     """
 
-    conn.execute("set search_path to public, eav, li;")
-
     # la table temporaire pour store les informations des lexèmes.
     lexeme_text = Identifier(LEXEME_TEXT_TABLE)
 
@@ -89,12 +88,12 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
     # ajouter à ces lexèmes les lexèmes définis par l'utilisateurice. créer aussi les colonnes et tables correspondantes.
     if lex_user_attrs:
         lex_attrs.extend(lex_user_attrs)
-        add_user_defined_columns(conn, "li.lexeme", lex_user_attrs)
+        add_user_defined_columns(conn, f"{SCHEMA}.lexeme", lex_user_attrs)
 
     # une vue pour les lexemes-text (avec les valeurs, et pas les fk).
     s = SQL("""drop view if exists {}; create view {} as """)
     s = s.format(lexeme_text, lexeme_text)
-    s += select_values_fk("li.lexeme", lex_attrs)
+    s += select_values_fk(f"{SCHEMA}.lexeme", lex_attrs)
     conn.execute(s)
 
     # table temporaire avec uniquement les nouveaux lexèmes.
@@ -153,8 +152,8 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
     insert_columns = map(Identifier, insert_columns)
     insert_columns = SQL(", ").join(insert_columns)
 
-    stmt = SQL("insert into li.lexeme ({columns})").format(
-        columns=insert_columns
+    stmt = SQL("insert into {schema}.lexeme ({columns})").format(
+        columns=insert_columns, schema=Identifier(SCHEMA)
     )
     attrs = [i for i in lex_attrs if i["name"] != "id"]
     stmt += select_values_fk("_lex", attrs, rev=True)
@@ -174,12 +173,12 @@ def _add_missing_deps(conn):
         from {doc} d,
         jsonb_to_recordset(d.j -> 'mots') as x(fonction text)
     ) 
-    insert into li.fonction (nom)
+    insert into {schema}.fonction (nom)
     select distinct fonction from _mot
-    except select nom from li.fonction
+    except select nom from {schema}.fonction
     """)
 
-    s = s.format(doc=qualify(DOC_TABLE))
+    s = s.format(doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA))
 
     conn.execute(s)
 
@@ -215,8 +214,8 @@ def _insert_mots(conn, **kwargs):
         phrase int,
         lexeme jsonb, 
         noyau int
-    ) join li.fonction f on x.fonction = f.nom""")
-    s_temp = s_temp.format(doc=qualify(DOC_TABLE))
+    ) join {schema}.fonction f on x.fonction = f.nom""")
+    s_temp = s_temp.format(doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA))
     conn.execute(s_temp)
 
     print(1.3)
@@ -237,7 +236,7 @@ def _insert_mots(conn, **kwargs):
     print(1.5)
     # ajoute les mots
     sql_add_mot = SQL("""
-    insert into li.mot (texte, debut, fin, num, phrase, noyau, fonction, lexeme)
+    insert into {schema}.mot (texte, debut, fin, num, phrase, noyau, fonction, lexeme)
     select
         m.texte,
         m.debut,
@@ -248,7 +247,7 @@ def _insert_mots(conn, **kwargs):
         m.fonction,
         x.id
     from _mot m
-    join id_jsonb_lex x on x.j = m.lexeme;""")
+    join id_jsonb_lex x on x.j = m.lexeme;""").format(schema=Identifier(SCHEMA))
     conn.execute(sql_add_mot)
 
 
@@ -260,7 +259,7 @@ def _insert_phrases(conn, **kwargs):
     """
 
     s = SQL("""
-        insert into li.phrase
+        insert into {schema}.phrase
         select
             d.id as texte,
             x.debut,
@@ -272,7 +271,7 @@ def _insert_phrases(conn, **kwargs):
         );
     """)
 
-    s = s.format(doc=qualify(DOC_TABLE))
+    s = s.format(doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA))
 
     conn.execute(s)
 
@@ -285,7 +284,7 @@ def _insert_tokens(conn, **kwargs):
     """
 
     s = SQL("""
-        insert into li.token 
+        insert into {schema}.token 
             (texte, debut, fin, num, phrase)
         select
             d.id as texte,
@@ -302,7 +301,7 @@ def _insert_tokens(conn, **kwargs):
         );
     """)
 
-    s = s.format(doc=qualify(DOC_TABLE))
+    s = s.format(doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA))
 
     conn.execute(s)
 
@@ -314,7 +313,7 @@ def _insert_spans(conn, **kwargs):
         conn (Connection)
     """
 
-    s = SQL("""insert into li.span
+    s = SQL("""insert into {schema}.span
         select
             d.id as texte,
             x.debut,
@@ -328,7 +327,7 @@ def _insert_spans(conn, **kwargs):
         );
     """)
 
-    s = s.format(doc=qualify(DOC_TABLE))
+    s = s.format(doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA))
 
     conn.execute(s)
 
@@ -341,6 +340,8 @@ def inserer(conn, keep_data=False, **kwargs):
         keep_data (bool)
         **kwargs
     """
+
+    conn.execute("set search_path to litteralement, eav, public")
 
     print(1)
     _insert_mots(conn, **kwargs)

@@ -1,12 +1,13 @@
 from psycopg.sql import SQL, Identifier
+from litteralement.util.tables import SCHEMA, SCHEMA_EAV
 
 
-UNANNOTATED_TEXTS = """
+UNANNOTATED_TEXTS = f"""
 with unannotated as (
-    select t.id from eav.texte t
+    select t.id from {SCHEMA_EAV}.texte t
     except
-    select distinct s.texte from li.segment s
-) select t.id, t.val from eav.texte t
+    select distinct s.texte from {SCHEMA}.segment s
+) select t.id, t.val from {SCHEMA_EAV}.texte t
 join unannotated u on u.id = t.id;
 """
 

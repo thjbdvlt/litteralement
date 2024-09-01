@@ -1,3 +1,5 @@
+SCHEMA = "litteralement"
+SCHEMA_EAV = "eav"
 DOC_TABLE = "litteralement._document"
 LEXEME_TEXT_TABLE = "_lexeme_text"
 LEXEME_ATTRS = [
