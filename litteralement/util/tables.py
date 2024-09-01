@@ -1,4 +1,4 @@
-DOC_TABLE = "import._document"
+DOC_TABLE = "litteralement._document"
 LEXEME_TEXT_TABLE = "_lexeme_text"
 LEXEME_ATTRS = [
     {

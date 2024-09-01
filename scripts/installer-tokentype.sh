@@ -4,7 +4,7 @@
 
 set -e
 
-repo=https://github.com/thjbdvlt/tokentype
+repo=https://github.com/thjbdvlt/spacy-tokentype
 temp=/tmp/litteralement-installer
 
 git clone $repo $temp

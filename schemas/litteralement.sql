@@ -329,6 +329,14 @@ CREATE TABLE litteralement.span (
 )
 INHERITS (litteralement.segment);
 
+--
+-- Name: _entite; Type: TABLE; Schema: import; Owner: -
+--
+
+CREATE TABLE litteralement._document (
+    id integer,
+    j jsonb
+);
 
 --
 -- Name: fonction fonction_nom_key; Type: CONSTRAINT; Schema: litteralement; Owner: -
