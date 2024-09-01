@@ -192,10 +192,10 @@ def _insert_mots(conn, **kwargs):
         conn (Connection)
     """
 
-    print(1.1)
+    print(1.1, 'ajout des fonctions syntaxiques manquantes...')
     _add_missing_deps(conn)
 
-    print(1.2)
+    print(1.2, "récupération des mots...")
     # crée une table temporaire pour les mots
     s_temp = SQL("""create temp table _mot as
     select 
@@ -222,10 +222,9 @@ def _insert_mots(conn, **kwargs):
     )
     conn.execute(s_temp)
 
-    print(1.3)
+    print(1.3, "insertion des lexèmes...")
     _insert_lexemes(conn, **kwargs)
 
-    print(1.4)
     # crée une table lookup avec deux colonnes: les IDs des lexèmes et leur représentations (textuelle) en JSONB (similaire à celle dans les mots).
     s = SQL("""create temp table id_jsonb_lex as
     select 
@@ -237,7 +236,7 @@ def _insert_mots(conn, **kwargs):
 
     conn.execute(s)
 
-    print(1.5)
+    print(1.5, "insertion des mots...")
     # ajoute les mots
     sql_add_mot = SQL("""
     insert into {schema}.mot (texte, debut, fin, num, phrase, noyau, fonction, lexeme)
@@ -255,6 +254,7 @@ def _insert_mots(conn, **kwargs):
         schema=Identifier(SCHEMA)
     )
     conn.execute(sql_add_mot)
+    print("mots OK!")
 
 
 def _insert_phrases(conn, **kwargs):
@@ -351,15 +351,19 @@ def inserer(conn, keep_data=False, **kwargs):
 
     print(1)
     _insert_mots(conn, **kwargs)
-    print(2)
+    print(2, 'insertions des tokens (non-mots)...')
     _insert_tokens(conn, **kwargs)
-    print(3)
+    print('tokens OK.')
+    print(3, 'insertions des spans...')
     _insert_spans(conn, **kwargs)
-    print(4)
+    print('spans OK.')
+    print(4, 'insertion des phrases...')
     _insert_phrases(conn, **kwargs)
+    print("phrases OK.")
 
     if keep_data is False:
         doctable = qualify(DOC_TABLE)
         conn.execute(SQL("truncate {}").format(doctable))
 
     conn.commit()
+    print("terminé.")
