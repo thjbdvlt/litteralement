@@ -1,7 +1,10 @@
 littéralement
 =============
 
-__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) conçu pour l'analyse de texte en français.
+__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) conçu pour stocker les informations produites par l'annotation automatique de texte en français (_mot_, _lexème_, _phrase_, _morphologie_, etc.), en particulier à l'aide de la librairie [spacy](https://spacy.io/).
+
+![](./img/diagram_records.svg)
+
 
 il y a en fait deux _schémas_: l'un pour les annotations de textes (_mot_, _lexeme_, _morphologie_, etc.) et l'un pour les objets du mondes (qui contiennent les textes). les deux sont indépendants, et le schéma d'annotation de texte (__litteralement__) peut donc être simplement ajouté à une base de données existante. le second implémente un modèle générique (EAV) assez simple, mais propose des fonctions d'importations qui permettent de simplifier l'usage d'un tel modèle. ensemble, ces deux schémas constituent donc un modèle générique (EAV) hybride.
 
@@ -25,8 +28,6 @@ le diagramme ci-dessous représente la structure de la base de données. chaque 
 [^4]: les _foreign keys_ (comme, pour le cas de segment, _texte.id_) ne se transmettent par par héritage; elles sont systématiquement ajoutées dans la définition du schéma, ainsi que toutes les autres contraintes.
 
 [^7]: exemple typique, extrait de la documentation de postgresql: villes et capitales; la table capitale _hérite_ de la table _ville_ (les capitales sont un type spécifique de ville), auquel est ajoutée des propriétés ou contraintes (ex. "état").
-
-![](./img/diagram_records.svg)
 
 nlp
 ---
