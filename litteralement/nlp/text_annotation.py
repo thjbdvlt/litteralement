@@ -41,7 +41,12 @@ def todict(
         start_char = token.idx + 1
         end_char = start_char + len(token.text)
         i = token.i
-        d = {"debut": start_char, "fin": end_char, "num": i, "phrase": token_sent_idx[i]}
+        d = {
+            "debut": start_char,
+            "fin": end_char,
+            "num": i,
+            "phrase": token_sent_idx[i],
+        }
         if isword(token):
             d.update(
                 {

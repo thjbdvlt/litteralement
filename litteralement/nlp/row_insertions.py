@@ -88,7 +88,9 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
     # ajouter à ces lexèmes les lexèmes définis par l'utilisateurice. créer aussi les colonnes et tables correspondantes.
     if lex_user_attrs:
         lex_attrs.extend(lex_user_attrs)
-        add_user_defined_columns(conn, f"{SCHEMA}.lexeme", lex_user_attrs)
+        add_user_defined_columns(
+            conn, f"{SCHEMA}.lexeme", lex_user_attrs
+        )
 
     # une vue pour les lexemes-text (avec les valeurs, et pas les fk).
     s = SQL("""drop view if exists {}; create view {} as """)
@@ -136,7 +138,7 @@ def _insert_lexemes(conn, lex_user_attrs=None, **kwargs):
         if i["is_literal"] is False:
             tablename = i["name"]
             column_value = i["value_column"]
-            if i['datatype'] == 'text':
+            if i["datatype"] == "text":
                 getter = SQL("->>")
             else:
                 getter = SQL("->")
@@ -215,7 +217,9 @@ def _insert_mots(conn, **kwargs):
         lexeme jsonb, 
         noyau int
     ) join {schema}.fonction f on x.fonction = f.nom""")
-    s_temp = s_temp.format(doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA))
+    s_temp = s_temp.format(
+        doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA)
+    )
     conn.execute(s_temp)
 
     print(1.3)
@@ -247,7 +251,9 @@ def _insert_mots(conn, **kwargs):
         m.fonction,
         x.id
     from _mot m
-    join id_jsonb_lex x on x.j = m.lexeme;""").format(schema=Identifier(SCHEMA))
+    join id_jsonb_lex x on x.j = m.lexeme;""").format(
+        schema=Identifier(SCHEMA)
+    )
     conn.execute(sql_add_mot)
 
 
