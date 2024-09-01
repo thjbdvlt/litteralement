@@ -110,7 +110,7 @@ litteralement.nlp.text_annotation.annoter(
 )
 ```
 
-la fonction d'annotation, par défaut, insère automatiquement les données dans les textes, mais c'est un comportement qui peut être modifié pour que les annotations soient simplement placées dans la table `litteralemetn._document` en passant la valeur `True` dans le paramètre `noinsert`. le paramètre `isword`, quand à lui, permet de passer une fonction qui distinguera les __mots__ des simples __tokens__. pour que tous les _tokens_ soient sans distinctions placés dans la table __mot__, on pourra donc simplement passer une fonction qui retourne toujours la valeur `True`:
+la fonction d'annotation, par défaut, insère automatiquement les données dans les textes, mais c'est un comportement qui peut être modifié pour que les annotations soient simplement placées dans la table `litteralement._document` en passant la valeur `True` dans le paramètre `noinsert`. le paramètre `isword`, quand à lui, permet de passer une fonction qui distinguera les __mots__ des simples __tokens__. pour que tous les _tokens_ soient sans distinctions placés dans la table __mot__, on pourra donc simplement passer une fonction qui retourne toujours la valeur `True`:
 
 ```python
 litteralement.nlp.text_annotation.annoter(
