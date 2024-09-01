@@ -136,7 +136,7 @@ def annoter(
     )
 
     # placer les documents dans la table litteralement._document (la méthode 'COPY' est beaucoup plus rapide qu'une insertion normale).
-    print("début de l'annotation")
+    print("début de l'annotation...")
     with cur_send.copy(
         "COPY litteralement._document (j, id) FROM STDIN"
     ) as copy:

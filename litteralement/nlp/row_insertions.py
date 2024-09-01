@@ -353,17 +353,17 @@ def inserer(conn, keep_data=False, **kwargs):
     _insert_mots(conn, **kwargs)
     print(2, 'insertions des tokens (non-mots)...')
     _insert_tokens(conn, **kwargs)
-    print('tokens OK.')
+    print('tokens OK!')
     print(3, 'insertions des spans...')
     _insert_spans(conn, **kwargs)
-    print('spans OK.')
+    print('spans OK!')
     print(4, 'insertion des phrases...')
     _insert_phrases(conn, **kwargs)
-    print("phrases OK.")
+    print("phrases OK!")
 
     if keep_data is False:
         doctable = qualify(DOC_TABLE)
         conn.execute(SQL("truncate {}").format(doctable))
 
     conn.commit()
-    print("terminé.")
+    print("terminé!")
