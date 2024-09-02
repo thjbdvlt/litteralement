@@ -192,7 +192,7 @@ def _insert_mots(conn, **kwargs):
         conn (Connection)
     """
 
-    print(1.1, 'ajout des fonctions syntaxiques manquantes...')
+    print(1.1, "ajout des fonctions syntaxiques manquantes...")
     _add_missing_deps(conn)
 
     print(1.2, "récupération des mots...")
@@ -351,13 +351,13 @@ def inserer(conn, keep_data=False, **kwargs):
 
     print(1)
     _insert_mots(conn, **kwargs)
-    print(2, 'insertions des tokens (non-mots)...')
+    print(2, "insertions des tokens (non-mots)...")
     _insert_tokens(conn, **kwargs)
-    print('tokens OK!')
-    print(3, 'insertions des spans...')
+    print("tokens OK!")
+    print(3, "insertions des spans...")
     _insert_spans(conn, **kwargs)
-    print('spans OK!')
-    print(4, 'insertion des phrases...')
+    print("spans OK!")
+    print(4, "insertion des phrases...")
     _insert_phrases(conn, **kwargs)
     print("phrases OK!")
 
