@@ -1,6 +1,5 @@
 import json
 import tqdm
-import psycopg
 from psycopg.sql import SQL, Identifier
 from . import util
 
@@ -39,7 +38,7 @@ def _copy_from_json_l(copy, files) -> None:
                 copy.write_row(line.strip())
 
 
-def copy_from(conninfo, files, jsonl=False, noinsert=False):
+def copy_from(conn, files, jsonl=False, noinsert=False):
     """copy from JSON/JSONL files into the database.
 
     args:
@@ -52,8 +51,6 @@ def copy_from(conninfo, files, jsonl=False, noinsert=False):
     returns (None)
     """
 
-    # connection to database
-    conn = psycopg.connect(conninfo)
     cur = conn.cursor()
 
     # make the statement
