@@ -71,7 +71,7 @@ def cli_schema(args) -> None:
 
     name = args.schema_name
     fk = args.text_table
-    if name == 'fk' and not fk:
+    if name == "fk" and not fk:
         raise ValueError("fk required option -t", name)
     s = schema.get_schema_definition(name, fk)
     print(s)

@@ -6,4 +6,4 @@ if [ "$1" == "" ];then
 fi
 
 psql -c "create database $1"
-psql -d "$1" -f ./litteralement/schemas/litteralement.sql -f ./litteralement/schemas/eav.sql
+litteralement schema both | psql -d "$1"
