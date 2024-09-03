@@ -5,7 +5,7 @@ from psycopg.sql import SQL, Identifier
 
 _fk_stmt = """alter table {schema_li}.{table_li}
 add constraint {constraint_name} foreign key (texte)
-references {{schema_text}}.{{table_text}} ({{pk_text}});
+references {{schema}}.{{table}} ({{pk}});
 """
 FK_STMT = ""
 for i in tables.FK_TEXT_TABLES:
@@ -25,7 +25,7 @@ def _get(filename):
     return pkgutil.get_data(__name__, f"data/{filename}.sql").decode()
 
 
-def get_schema_definition(name: str) -> str:
+def get_schema_definition(name, fk) -> str:
     """print the schema definition.
 
     args:
@@ -36,15 +36,19 @@ def get_schema_definition(name: str) -> str:
 
     schemas = (tables.SCHEMA, tables.SCHEMA_EAV)
 
-    if name not in schemas:
+    if name not in schemas + ("both", "fk"):
         raise ValueError("unknown schema name:", name)
     elif name == "both":
         return "\n\n".join([_get(i) for i in schemas])
-    else:
+    elif name == tables.SCHEMA_EAV:
         return _get(name)
+    elif name == "fk":
+        return make_foreign_key(fk)
+    else:
+        return _get(name) + make_foreign_key(fk)
 
 
-def make_foreign_key(text_table='eav.texte.id') -> str:
+def make_foreign_key(text_table="eav.texte.id") -> str:
     """generate the foreign key.
 
     args:
@@ -64,4 +68,4 @@ def make_foreign_key(text_table='eav.texte.id') -> str:
     fk = [Identifier(i) for i in fk]
     schema, table, pk = fk
     s = SQL(FK_STMT).format(schema=schema, table=table, pk=pk)
-    return str(s)
+    return s.as_string()

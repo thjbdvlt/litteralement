@@ -51,13 +51,10 @@ def cli_annotate(args) -> None:
 
     conn = cli_connect(args)
     nlp = spacy.load(args.model)
-    kwargs = {i: getattr(args, i) for i in ('n_process', 'batch_size')}
+    kwargs = {i: getattr(args, i) for i in ("n_process", "batch_size")}
     kwargs = {k: v for k, v in kwargs.items() if v}
     text_annotation.annoter(
-        conn=conn,
-        nlp=nlp,
-        query=args.query,
-        **kwargs
+        conn=conn, nlp=nlp, query=args.query, **kwargs
     )
     conn.commit()
     conn.close()
@@ -72,8 +69,20 @@ def cli_schema(args) -> None:
 
     from . import schema
 
-    s = schema.get_schema_definition(args.schema_name)
-    return s + schema.make_foreign_key(args.text_table)
+    name = args.schema_name
+    s = schema.get_schema_definition(name, args.text_table)
+    print(s)
+
+
+def cli_fk(args) -> None:
+    """print
+
+    args:
+        args (argparse.Namespace): the command line arguments.
+    """
+    from . import schema
+
+    print(schema.make_foreign_key(args.text_table))
 
 
 # command line argument parser
@@ -92,10 +101,6 @@ sub_schema = subparsers.add_parser(
 sub_annotate = subparsers.add_parser(
     "annotate",
     help=f"annotate texts using spacy and insert the resulting annotations into the tables of the schema {tables.SCHEMA}",
-)
-sub_join = subparsers.add_parser(
-    "join-schema",
-    help='generate the SQL commands to create referencing constraints (for the tables "mot", "token", "phrase", "span" and "segment"). it is only usefull if a database already has the schema "litteralement" and this schema is not referencing the table containing texts.',
 )
 
 parser.set_defaults(func=lambda i: None)
@@ -137,12 +142,13 @@ sub_copy.add_argument(
 
 # sub-command "schema"
 sub_schema.add_argument(
-    "schema-name",
+    "schema_name",
     choices=(tables.SCHEMA_EAV, tables.SCHEMA, "both"),
     nargs="?",
     action="store",
     help="name of the schema to be output.",
     default="both",
+    metavar="schema-name",
 )
 
 sub_schema.add_argument(
@@ -152,14 +158,6 @@ sub_schema.add_argument(
     type=str,
     action="store",
     metavar=ARG_TABLE_METAVAR,
-)
-
-# sub-command "join"
-sub_join.add_argument(
-    "table",
-    nargs=1,
-    metavar=ARG_TABLE_METAVAR,
-    help=ARG_TABLE_HELP,
 )
 
 # sub-command "annotate"
