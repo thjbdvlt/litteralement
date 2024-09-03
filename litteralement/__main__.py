@@ -51,12 +51,13 @@ def cli_annotate(args) -> None:
 
     conn = cli_connect(args)
     nlp = spacy.load(args.model)
+    kwargs = {i: getattr(args, i) for i in ('n_process', 'batch_size')}
+    kwargs = {k: v for k, v in kwargs.items() if v}
     text_annotation.annoter(
         conn=conn,
         nlp=nlp,
         query=args.query,
-        batch_size=args.batch_size,
-        n_process=args.n_process,
+        **kwargs
     )
     conn.commit()
     conn.close()
@@ -178,8 +179,8 @@ sub_annotate.add_argument(
     help="local path or name of the model. e.g. 'fr_core_news_lg' or './path/to/my/model/'.",
 )
 group_spacy = sub_annotate.add_argument_group("spacy")
-group_spacy.add_argument("--n-process", type=int, required=False)
-group_spacy.add_argument("--batch-size", type=int, required=False)
+group_spacy.add_argument("--n_process", type=int, required=False)
+group_spacy.add_argument("--batch_size", type=int, required=False)
 
 
 def main():

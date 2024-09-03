@@ -35,7 +35,8 @@ def _copy_from_json_l(copy, files) -> None:
     for file in tqdm.tqdm(files):
         with open(file, "r") as f:
             for line in f:
-                copy.write_row((line.strip(),))
+                row = (line.strip(),)
+                copy.write_row(row)
 
 
 def copy_from(conn, files, jsonl=False, noinsert=False):

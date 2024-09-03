@@ -97,9 +97,8 @@ def annoter(
     nlp,
     batch_size=1000,
     n_process=2,
-    isword=lambda token: token._.tokentype == "word",
+    no_tokentype=False,
     noinsert=False,
-    # progress_item_number=200,
     **kwargs,
 ):
     """Annoter des textes et les insérer dans la base de données.
@@ -115,6 +114,17 @@ def annoter(
         isword (callable):  la fonction qui distingue les mots des autres tokens.
         noinsert (bool):  ne pas insérer le résultat de l'annotation dans les tables.
     """
+
+    if no_tokentype:
+
+        def isword(token):
+            return True
+    else:
+        if "tokentype" not in nlp.pipe_names:
+            nlp.add_pipe("tokentype")
+
+        def isword(token):
+            return token._.tokentype == "word"
 
     # deux curseurs: il faut pouvoir envoyer tout en continuant de recevoir
     cur_get = conn.cursor()
