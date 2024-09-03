@@ -25,21 +25,21 @@ def get(filename):
     return pkgutil.get_data(__name__, f"data/{filename}.sql").decode()
 
 
-def make_foreign_key(text_table="eav.texte.id") -> str:
+def make_foreign_key(text="eav.texte.id") -> str:
     """generate the foreign key.
 
     args:
-        text_table (str): SCHEMA.TABLE.PK (e.g. public.texte.id)
+        text (str): SCHEMA.TABLE.PK (e.g. public.texte.id)
 
     returns (str): the sql statement.
     """
 
-    fk = text_table.strip().split(".")
+    fk = text.strip().split(".")
     try:
         assert len(fk) == 3
     except AssertionError:
         raise ValueError(
-            "couldn't parse: ", text_table, "\n\n(SCHEMA.TABLE.PK)"
+            "couldn't parse: ", text, "\n\n(SCHEMA.TABLE.PK)"
         )
 
     fk = [Identifier(i) for i in fk]
@@ -48,7 +48,7 @@ def make_foreign_key(text_table="eav.texte.id") -> str:
     return s.as_string()
 
 
-def get_schema_definition(name, fk="eav.texte.id") -> str:
+def get_schema_definition(name, fk) -> str:
     """print the schema definition.
 
     args:
@@ -69,6 +69,8 @@ def get_schema_definition(name, fk="eav.texte.id") -> str:
             s += get(i)
 
     if name in ("both", "fk"):
+        if not fk:
+            fk = "eav.texte.id"
         s += make_foreign_key(fk)
 
     return s
