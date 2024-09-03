@@ -1,1 +1,1 @@
-include litteralement/schemas/*.sql
+include litteralement/data/*.sql
