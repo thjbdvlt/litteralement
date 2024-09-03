@@ -1,7 +1,7 @@
 littéralement
 =============
 
-__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) conçu pour stocker les informations produites par l'annotation automatique de texte en français (_mot_, _lexème_, _phrase_, _morphologie_, etc.), en particulier à l'aide de la librairie [spacy](https://spacy.io/) (ou [stanza](https://stanfordnlp.github.io/stanza/)).
+__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) pour l'analyse automatique de textes en français, en particulier à l'aide de la librairie [spacy](https://spacy.io/). ses tables sont conçues autour des annotations que produisent typiquement les librairies de _NLP_ (_pos_, _lemma_, _head_, _lexeme_, _feats_, etc.).
 
 ![](./img/diagram_records.svg)
 
