@@ -5,7 +5,6 @@ __littéralement__ est un schéma de base de données [postgresql](https://www.p
 
 ![](./img/diagram_records.svg)
 
-
 il y a en fait deux _schémas_: l'un pour les annotations de textes (_mot_, _lexeme_, _morphologie_, etc.) et l'un pour les objets du mondes (qui contiennent les textes). les deux sont indépendants, et le schéma d'annotation de texte (__litteralement__) peut donc être simplement ajouté à une base de données existante sans avoir à la modifier. le second implémente un modèle générique (EAV) assez simple, mais propose des fonctions d'importations qui permettent de simplifier l'usage d'un tel modèle. ensemble, ces deux schémas constituent donc un modèle générique (EAV) hybride.
 
 le modèle générique que j'utilise comme base, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.

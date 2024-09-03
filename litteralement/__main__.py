@@ -34,7 +34,7 @@ def cli_copy(args) -> None:
     from . import copy
 
     conn = cli_connect(args)
-    copy.copy_from(conn, args.files, args.jsonl)
+    copy.copy_from(conn, args.file, args.jsonl)
     conn.commit()
     conn.close()
 
@@ -71,8 +71,8 @@ def cli_schema(args) -> None:
 
     from . import schema
 
-    schema.get_schema_definition(args.schema)
-    # TODO: le join statement
+    s = schema.get_schema_definition(args.schema_name)
+    return s + schema.make_foreign_key(args.text_table)
 
 
 # command line argument parser
@@ -97,9 +97,10 @@ sub_join = subparsers.add_parser(
     help='generate the SQL commands to create referencing constraints (for the tables "mot", "token", "phrase", "span" and "segment"). it is only usefull if a database already has the schema "litteralement" and this schema is not referencing the table containing texts.',
 )
 
-# sub_copy.set_defaults()
-# sub_annotate.set_defaults()
-# sub_schea.set_defaults()
+parser.set_defaults(func=lambda i: None)
+sub_copy.set_defaults(func=cli_copy)
+sub_annotate.set_defaults(func=cli_annotate)
+sub_schema.set_defaults(func=cli_schema)
 
 ARG_TABLE_HELP = 'the table containing texts, referenced by tables "mot", "phrase", "span", "segment" and "token". this is used to create referencing constraint.'
 ARG_TABLE_METAVAR = "SCHEMA.TABLE.PK"
@@ -135,7 +136,7 @@ sub_copy.add_argument(
 
 # sub-command "schema"
 sub_schema.add_argument(
-    "name",
+    "schema-name",
     choices=(tables.SCHEMA_EAV, tables.SCHEMA, "both"),
     nargs="?",
     action="store",
@@ -162,8 +163,8 @@ sub_join.add_argument(
 
 # sub-command "annotate"
 sub_annotate.add_argument(
-    "-c",
-    "--command",
+    "-q",
+    "--query",
     metavar="QUERY",
     action="store",
     required=True,
@@ -183,7 +184,7 @@ group_spacy.add_argument("--batch-size", type=int, required=False)
 
 def main():
     args = parser.parse_args()
-    parser.func(args)
+    args.func(args)
 
 
 if __name__ == "__main__":

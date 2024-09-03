@@ -2,6 +2,8 @@ SCHEMA = "litteralement"
 SCHEMA_EAV = "eav"
 SCHEMA_IMPORT = "import"
 DOC_TABLE = "litteralement._document"
+TABLE_IMPORT = "_entite"
+FK_TEXT_TABLES = ("mot", "span", "segment", "token")
 
 LEXEME_TEXT_TABLE = "_lexeme_text"
 LEXEME_ATTRS = [
