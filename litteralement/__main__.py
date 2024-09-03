@@ -70,7 +70,7 @@ def cli_schema(args) -> None:
     from . import schema
 
     name = args.schema_name
-    fk = args.text_table
+    fk = args.text
     if name == "fk" and not fk:
         raise ValueError("fk required option -t", name)
     s = schema.get_schema_definition(name, fk)
@@ -145,7 +145,7 @@ sub_schema.add_argument(
 
 sub_schema.add_argument(
     "-t",
-    "--text-table",
+    "--text",
     help=ARG_TABLE_HELP,
     type=str,
     action="store",
