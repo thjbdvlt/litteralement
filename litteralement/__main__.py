@@ -70,19 +70,11 @@ def cli_schema(args) -> None:
     from . import schema
 
     name = args.schema_name
-    s = schema.get_schema_definition(name, args.text_table)
+    fk = args.text_table
+    if name == 'fk' and not fk:
+        raise ValueError("fk required option -t", name)
+    s = schema.get_schema_definition(name, fk)
     print(s)
-
-
-def cli_fk(args) -> None:
-    """print
-
-    args:
-        args (argparse.Namespace): the command line arguments.
-    """
-    from . import schema
-
-    print(schema.make_foreign_key(args.text_table))
 
 
 # command line argument parser
@@ -143,7 +135,7 @@ sub_copy.add_argument(
 # sub-command "schema"
 sub_schema.add_argument(
     "schema_name",
-    choices=(tables.SCHEMA_EAV, tables.SCHEMA, "both"),
+    choices=(tables.SCHEMA_EAV, tables.SCHEMA, "both", "fk"),
     nargs="?",
     action="store",
     help="name of the schema to be output.",

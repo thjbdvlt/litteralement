@@ -25,7 +25,7 @@ def _get(filename):
     return pkgutil.get_data(__name__, f"data/{filename}.sql").decode()
 
 
-def get_schema_definition(name, fk) -> str:
+def get_schema_definition(name, fk="eav.texte.id") -> str:
     """print the schema definition.
 
     args:
@@ -40,12 +40,13 @@ def get_schema_definition(name, fk) -> str:
         raise ValueError("unknown schema name:", name)
     elif name == "both":
         return "\n\n".join([_get(i) for i in schemas])
-    elif name == tables.SCHEMA_EAV:
-        return _get(name)
-    elif name == "fk":
-        return make_foreign_key(fk)
-    else:
-        return _get(name) + make_foreign_key(fk)
+
+    s = ""
+    if name in (schemas):
+        s = _get(name)
+    if fk:
+        s += make_foreign_key(fk)
+    return s
 
 
 def make_foreign_key(text_table="eav.texte.id") -> str:
