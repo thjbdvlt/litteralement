@@ -1,10 +1,75 @@
+"""command line interface."""
+
 import argparse
+from .util import tables
 
-# temporary (for dev)
-from util import tables
 
-ARG_TABLE_HELP = 'the table containing texts, referenced by tables "mot", "phrase", "span", "segment" and "token". this is used to create referencing constraint.'
-ARG_TABLE_METAVAR = "SCHEMA.TABLE.PK"
+def cli_connect(args):
+    """connect to a database.
+
+    args:
+        args (argparse.Namespace): the command line arguments.
+
+    returns (psycopg.Connection): the connection.
+    """
+
+    import psycopg
+
+    conninfo = {
+        i: getattr(args, i)
+        for i in ("dbname", "host", "port", "user", "password")
+    }
+
+    conn = psycopg.connect(**conninfo)
+    return conn
+
+
+def cli_copy(args) -> None:
+    """copy from files.
+
+    args:
+        args (argparse.Namespace): the command line arguments.
+    """
+
+    from . import copy
+
+    conn = cli_connect(args)
+    copy.copy_from(conn, args.files, args.jsonl)
+
+
+def cli_annotate(args) -> None:
+    """annotate texts using spacy.
+
+    args:
+        args (argparse.Namespace): the command line arguments.
+    """
+
+    from .nlp import text_annotation
+    import spacy
+
+    conn = cli_connect(args)
+    nlp = spacy.load(args.model)
+    text_annotation.annoter(
+        conn=conn,
+        nlp=nlp,
+        query=args.query,
+        batch_size=args.batch_size,
+        n_process=args.n_process,
+    )
+
+
+def cli_schema(args) -> None:
+    """print schemas definition to stdout.
+
+    args:
+        args (argparse.Namespace): the command line arguments.
+    """
+
+    from . import schema
+
+    schema.get_schema_definition(args.schema)
+    # TODO: le join statement
+
 
 # command line argument parser
 parser = argparse.ArgumentParser()
@@ -27,6 +92,27 @@ sub_join = subparsers.add_parser(
     "join-schema",
     help='generate the SQL commands to create referencing constraints (for the tables "mot", "token", "phrase", "span" and "segment"). it is only usefull if a database already has the schema "litteralement" and this schema is not referencing the table containing texts.',
 )
+
+# sub_copy.set_defaults()
+# sub_annotate.set_defaults()
+# sub_schea.set_defaults()
+
+ARG_TABLE_HELP = 'the table containing texts, referenced by tables "mot", "phrase", "span", "segment" and "token". this is used to create referencing constraint.'
+ARG_TABLE_METAVAR = "SCHEMA.TABLE.PK"
+
+# arguments for connection are shared between multiples subcommands.
+for p in (sub_annotate, sub_copy):
+    conninfo = p.add_argument_group("conninfo")
+    conninfo.add_argument(
+        "-d", "--dbname", action="store", required=True
+    )
+    for low, long in (
+        ("-p", "--port"),
+        ("-H", "--host"),
+        ("-U", "--user"),
+        ("-P", "--password"),
+    ):
+        conninfo.add_argument(low, long, action="store", required=False)
 
 # sub-command "copy"
 sub_copy.add_argument(
@@ -70,22 +156,7 @@ sub_join.add_argument(
     help=ARG_TABLE_HELP,
 )
 
-# arguments for connection are shared between multiples subcommands.
-for p in (sub_annotate, sub_copy):
-    conninfo = p.add_argument_group("conninfo")
-    conninfo.add_argument(
-        "-d", "--dbname", action="store", required=True
-    )
-    for low, long in (
-        ("-p", "--port"),
-        ("-H", "--host"),
-        ("-U", "--user"),
-        ("-P", "--password"),
-    ):
-        conninfo.add_argument(
-            low, long, action="store", required=False
-        )
-
+# sub-command "annotate"
 sub_annotate.add_argument(
     "-c",
     "--command",
@@ -101,14 +172,15 @@ sub_annotate.add_argument(
     required=True,
     help="local path or name of the model. e.g. 'fr_core_news_lg' or './path/to/my/model/'.",
 )
+group_spacy = sub_annotate.add_argument_group("spacy")
+group_spacy.add_argument("--n-process", type=int, required=False)
+group_spacy.add_argument("--batch-size", type=int, required=False)
 
-    # print(args)
 
+def main():
+    args = parser.parse_args()
+    parser.func(args)
 
-# litteralement schema generate
-# litteralement schema join
-# litteralement annotate ...
-# litteralement insert ... [--query QUERY]
 
 if __name__ == "__main__":
-    args = parser.parse_args()
+    main()

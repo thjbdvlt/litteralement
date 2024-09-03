@@ -11,6 +11,9 @@ dependencies = [
     "tqdm",
 ]
 
+[project.scripts]
+litteralement = "litteralement.__main__:main"
+
 [project.urls]
 Homepage = "https://github.com/thjbdvlt/litteralement"
 

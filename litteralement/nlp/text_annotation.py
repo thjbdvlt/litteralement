@@ -99,7 +99,7 @@ def annoter(
     n_process=2,
     isword=lambda token: token._.tokentype == "word",
     noinsert=False,
-    progress_item_number=200,
+    # progress_item_number=200,
     **kwargs,
 ):
     """Annoter des textes et les insérer dans la base de données.
