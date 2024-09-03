@@ -35,6 +35,8 @@ def cli_copy(args) -> None:
 
     conn = cli_connect(args)
     copy.copy_from(conn, args.files, args.jsonl)
+    conn.commit()
+    conn.close()
 
 
 def cli_annotate(args) -> None:
@@ -56,6 +58,8 @@ def cli_annotate(args) -> None:
         batch_size=args.batch_size,
         n_process=args.n_process,
     )
+    conn.commit()
+    conn.close()
 
 
 def cli_schema(args) -> None:
@@ -126,7 +130,7 @@ sub_copy.add_argument(
     action="store_true",
     default=False,
     required=False,
-    help="use jsonl file format (one objet per line).",
+    help="use JSONL file format (one objet per line) instead of JSON.",
 )
 
 # sub-command "schema"

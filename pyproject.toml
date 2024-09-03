@@ -6,7 +6,7 @@ description = "base de données postgresql pour l'analyse de textes en français
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "psycopg",
+    "psycopg[binary]",
     "spacy",
     "tqdm",
 ]
