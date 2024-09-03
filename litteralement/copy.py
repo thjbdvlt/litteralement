@@ -61,7 +61,7 @@ def copy_from(conn, files, jsonl=False, noinsert=False):
     stmt = stmt.format(schema=schema, table=table)
 
     # copy files (JSON/JSONL)
-    with cur.copy() as copy:
+    with cur.copy(stmt) as copy:
         if jsonl:
             _copy_from_json_l(copy, files)
         else:
@@ -72,7 +72,7 @@ def copy_from(conn, files, jsonl=False, noinsert=False):
         return
 
     # call the procedure that insert data from import table to EAV tables.
-    stmt = "call procedure {schema}.importer()"
+    stmt = "call {schema}.importer();"
     stmt = SQL(stmt)
     stmt = stmt.format(schema=schema)
     cur.execute(stmt)

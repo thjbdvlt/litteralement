@@ -82,7 +82,7 @@ le seul champ requis est, pour chaque entité, le champ `classe`. le champ `id` 
 l'importation se fait en ajoutant dans la table `import._entite` des données au format décrit ci-dessus et en utilisant la procedure `import.importer()`:
 
 ```sql
-call procedure import.importer();
+call import.importer();
 ```
 
 annoter
