@@ -1,32 +1,100 @@
 littéralement
 =============
 
-__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) pour l'analyse automatique de textes en français, en particulier à l'aide de la librairie [spacy](https://spacy.io/). ses tables sont conçues autour des annotations que produisent typiquement les librairies de _NLP_ (_pos_, _lemma_, _head_, _lexeme_, _feats_, etc.).
+__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) pour l'analyse automatique de textes en français, conçu pour stocker les annotations produites par la librairie [spacy](https://spacy.io/). c'est aussi une interface minimale en ligne de commande permettant de facilement ajouter des données, d'annoter les textes (avec [spacy](https://spacy.io/)) et de placer le résultat de ces annotations dans la base de données.
+
+schémas
+-------
+
+les tables du schéma __litteralement__ sont destinées à recevoir les données typiquement produites lors de l'annotation automatique par des librairie de _NLP_ (_token_, _word_, _lemma_, _pos_, _dep_, _feats_, etc.) et organisées de façon à optimiser les performances et l'espace utilisé.
+
+un autre schéma optionnel, __eav__ (qui implémente un modèle générique/EAV minimal) peut être ajouté au schéma __litteralement__ pour avoir une base de données complète. les deux schémas étant indépendants, le schéma __eav__ peut aussi être utilisé seul.
+le modèle générique que j'utilise comme base, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.
+
+[^1]: Francesco Beretta, "Des sources aux données structurées", 14 octobre 2022, [En ligne](https://wiki-arhn.larhra.fr/lib/exe/fetch.php?media=intro_histoire_numerique:beretta_des_sources_aux_donnees_3-8.pdf), license CC BY-SA 4.0.
+
+ensemble, ces deux schémas constituent donc un modèle EAV hybride.
+
+le diagramme ci-dessous représente la structure de la base de données. chaque rectangle représente une table. les flèches traitillées représentent les [héritages](https://www.postgresql.org/docs/current/tutorial-inheritance.html) entre tables: la table __mot__ hérite par exemple de la table __token__ qui elle-même hérite de la table __segment__, les colonnes __texte__, __debut__ et __fin__[^4]. d'un point de vue conceptuelle, la relation d'héritage correspond à la relation _sous-classe de_[^7]. les autres flèches (pleines) représentent des _foreign keys_. les lignes commençant par `_` indiquent, elles-aussi des _foreign keys_: la valeur des colonnes en question est toujours `integer` ou, pour des raisons d'optimisation, `smallint`, car il est très improbable pour certaines tables de dépasser le millier de lignes (typiquement: les _part-of-speech tags_ et _dependency labels_, respectivement stockés dans les tables __nature__ et __fonction__). les colonnes qui commencent par le signe `+` représente des valeurs littérales. si le nom d'une colonne est souligné, cette colonne est utilisée comme _primary key_ (il s'agit toujours de la colonne `id`).
 
 ![](./img/diagram_records.svg)
 
-il y a en fait deux _schémas_: l'un pour les annotations de textes (_mot_, _lexeme_, _morphologie_, etc.) et l'un pour les objets du mondes (qui contiennent les textes). les deux sont indépendants, et le schéma d'annotation de texte (__litteralement__) peut donc être simplement ajouté à une base de données existante sans avoir à la modifier. le second implémente un modèle générique (EAV) assez simple, mais propose des fonctions d'importations qui permettent de simplifier l'usage d'un tel modèle. ensemble, ces deux schémas constituent donc un modèle générique (EAV) hybride.
+[^4]: les _foreign keys_ (comme, pour le cas de segment, _texte.id_) ne se transmettent par par héritage; elles sont systématiquement ajoutées dans la définition du schéma, ainsi que toutes les autres contraintes.
 
-le modèle générique que j'utilise comme base, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.
+[^7]: exemple typique, extrait de la documentation de postgresql: villes et capitales; la table capitale _hérite_ de la table _ville_ (les capitales sont un type spécifique de ville), auquel est ajoutée des propriétés ou contraintes (ex. "état").
 
-à ces schémas s'ajoutent des modules Python qui permettent, entre autres choses, de facilement [importer](./litteralement/eav/ajout.py) des données, de les [annoter](./litteralement/nlp) à l'aide de la librairie [spacy](https://spacy.io/) et d'insérer les annotations dans la base de données.
 
-[^1]: Francesco Beretta, "Des sources aux données structurées", 14 octobre 2022, [En ligne](https://wiki-arhn.larhra.fr/lib/exe/fetch.php?media=intro_histoire_numerique:beretta_des_sources_aux_donnees_3-8.pdf), license CC BY-SA 4.0.
+usage
+-----
+
+__litteralement__ est aussi une mini-interface en ligne de commande permettant de rapidement ajouter des données dans les tables à partir de fichiers JSON (ou JSONL) ou d'annoter des textes et d'insérer les annotations dans les tables (_tokens_, _lemmes_, etc.).
+
+pour construire un base de données complète, constituée du schéma __litteralement__ et du schéma __eav__:
+
+```bash
+psql -c 'create database mydatabase'
+litteralement schema both | psql -d 'mydatabase'
+```
+
+pour importer dans les tables du modèle EAV des données au format JSON (le format est décrit plus bas):
+
+```bash
+litteralement copy -d 'mydatabase' *.json
+```
+
+pour ajouter le schéma __litteralement__ à une base de données existante, il faut spécifier la table qui contient les textes afin que soient générées les _foreign keys_ des tables du schéma (la colonne _primary key_ doit être de type `integer`):
+
+```bash
+litteralement schema -t 'public.texte.id' | psql mydatabase
+```
+
+pour annoter des textes avec [spacy](https://spacy.io/) et ajouter le résultat des annotations dans les tables:
+
+```bash
+litteralement annotate --dbname mydatabase \
+    --model 'fr_core_news_lg' \
+    --query 'select id, val from text'
+```
+
+### options
+
+|courte|longue|description|
+|------|------|----|
+|`-l`|`--jsonl`|format JSONL (`copy`).|
+|`-t`|`--text-table`|la table contenant les textes (`schema`)|
+|`-q`|`--query`|la requête SQL pour sélectionner les textes à annoter, qui doit retourner deux colonnes: `integer` (_pk_) et `text` (le texte)|
+
+#### annotation avec spacy
+
+|courte|longue|
+|------|------|
+|`-n`|`--n_process`|
+|`-b`|`--batch_size`|
+|`-m`|`--model`|
+
+#### connexion à la base de données
+
+|courte|longue|
+|------|------|
+|`-d`|`--dbname`|
+|`-U`|`--user`|
+|`-p`|`--port`|
+|`-H`|`--host`|
+|`-P`|`--password`|
+
+
+<!--
 
 modèle EAV hybride
 ------------------
 
 - le schéma __eav__ implémente un modèle générique minimal et est destinée à décrire le _monde_ duquel on extrait des textes, qu'il s'agisse des supports matériels qui les contiennent, des acteurices sociaux qui les font circuler ou en relisent le contenu, ou encore des événements qui en motivent la rédaction. la flexibilité de ce modèle permet de décrire un grand nombre de chose très diverses à l'aide d'un nombre restreint et fixe de tables et de colonnes, et d'ajouter de nouveaux types d'objets (ou de relations) sans avoir à modifier le schéma[^2].
-- le schéma __litteralement__ est, à l'inverse, conçue pour accueillir des données dont la structure est à la fois prévisible et invariable, car l'analyse automatique des textes se fait souvent à l'aide d'outils et de concepts non seulement relativement standardisés, mais aussi uniformément appliqués: qu'on utilise la librairie [spacy](https://spacy.io/), [stanza](https://stanfordnlp.github.io/stanza/) ou [nltk](https://www.nltk.org/), on manipulera toujours des _sentences_ et des _tokens_, lesquels _tokens_ se verront quasi-systématiquement attribués, entre autres choses, un _lemma_ (lemme), un _part-of-speech tag_ (nature), un _dependency label_ (fonction), des caractéristiques morphologiques représentées selon le format [FEATS](https://universaldependencies.org/format.html#morphological-annotation), un _id_ numérique indiquant leur position dans le texte, etc. et s'il y a évidemment différents _stocks_ de propriétés, le choix d'une méthode d'annotation est généralement adoptée pour l'ensemble du corpus (c'est l'élément _invariable_, lequel permet la comparaison et l'analyse). la flexibilité du modèle EAV est donc inutile pour stocker ces données. comme le modèle EAV engendre par ailleurs des baisses importantes de performances, qu'il requiert un espace de stockage plus grand et qu'en plus il complexifie les requêtes (les rendant moins lisibles), il est préférable de construire cette seconde partie selon un modèle relationnel plus standard[^3].
+- le schéma __litteralement__ est, à l'inverse, conçue pour accueillir des données dont la structure est à la fois prévisible et invariable, car l'analyse automatique des textes se fait souvent à l'aide d'outils et de concepts non seulement relativement standardisés, mais aussi uniformément appliqués: qu'on utilise la librairie [spacy](https://spacy.io/), [stanza](https://stanfordnlp.github.io/stanza/) ou [nltk](https://www.nltk.org/), on manipulera toujours des _sentences_ et des _tokens_, lesquels _tokens_ se verront quasi-systématiquement attribués, entre autres choses, un _lemma_ (lemme), un _part-of-speech tag_ (nature), un _dependency label_ (fonction), des caractéristiques morphologiques représentées selon le format [FEATS](https://universaldependencies.org/format.html#morphological-annotation), un _id_ numérique indiquant leur position dans le texte, etc. et s'il y a évidemment différents _lots_ de propriétés, le choix d'une méthode d'annotation est généralement adoptée pour l'ensemble du corpus (c'est l'élément _invariable_, lequel permet la comparaison et l'analyse). la flexibilité du modèle EAV est donc inutile pour stocker ces données. comme le modèle EAV engendre par ailleurs des baisses importantes de performances, qu'il requiert un espace de stockage plus grand et qu'en plus il complexifie les requêtes (les rendant moins lisibles), il est préférable de construire cette seconde partie selon un modèle relationnel plus standard[^3].
 
 [^2]: il est particulièrement utile si l'on ne sait pas, au départ d'une recherche, ce qu'on va exactement collecter et la manière dont on va organiser le résultat de notre collecte (ou de nos analyses), ou la manière dont les objets de notre recherche peuvent se connecter par l'analyse.
 [^3]: on évite par exemple de surcharger la table __entité__ avec des millions de mots.
 
-le diagramme ci-dessous représente la structure de la base de données. chaque rectangle représente une table. les flèches traitillées représentent les [héritages](https://www.postgresql.org/docs/current/tutorial-inheritance.html) entre tables: la table __mot__ hérite par exemple de la table __token__ qui elle-même hérite de la table __segment__, les colonnes __texte__, __debut__ et __fin__[^4]. d'un point de vue conceptuelle, la relation d'héritage correspond à la relation _sous-classe de_[^7]. les autres flèches (pleines) représentent des _foreign keys_. les lignes commençant par `_` indiquent, elles-aussi des _foreign keys_: la valeur des colonnes en question est toujours `integer` ou, pour des raisons d'optimisation, `smallint`, car il est très improbable pour certaines tables de dépasser le millier de lignes (typiquement: les _part-of-speech tags_ et _dependency labels_, respectivement stockés dans les tables __nature__ et __fonction__). les colonnes qui commencent par le signe `+` représente des valeurs littérales. si le nom d'une colonne est souligné, cette colonne est utilisée comme _primary key_ (il s'agit toujours de la colonne `id`).
-
-[^4]: les _foreign keys_ (comme, pour le cas de segment, _texte.id_) ne se transmettent par par héritage; elles sont systématiquement ajoutées dans la définition du schéma, ainsi que toutes les autres contraintes.
-
-[^7]: exemple typique, extrait de la documentation de postgresql: villes et capitales; la table capitale _hérite_ de la table _ville_ (les capitales sont un type spécifique de ville), auquel est ajoutée des propriétés ou contraintes (ex. "état").
+-->
 
 nlp
 ---
@@ -53,20 +121,16 @@ importation
 si l'insertion d'entités, de propriétés ou de relations peut évidemment se faire manuellement, il est aussi possible d'importer des données structurées au format JSON comme suit, chaque objet JSON décrivant une entité, ses propriétés et les relations dont elle est le sujet.
 
 ```json
-{"id": 1, "classe": "bibliothèque"}
-```
-```json
-{"id": 2, "classe": "lieu", "est_magique": null, "magicité": 1.2}
-```
-```json
-{
-    "classe": "personne", "nom": "becky", "relations": [
-        {"type": "fréquente", "objet": 1}
-    ]
-}
-```
-```json
-{"classe": "livre", "relations": [{"type": "dans", "objet": 1}]},
+[
+    {"id": 1, "classe": "bibliothèque"},
+    {"id": 2, "classe": "lieu", "est_magique": null, "magicité": 1.2},
+    {
+        "classe": "personne", "nom": "becky", "relations": [
+            {"type": "fréquente", "objet": 1}
+        ]
+    },
+    {"classe": "livre", "relations": [{"type": "dans", "objet": 1}]},
+]
 ```
 
 le seul champ requis est, pour chaque entité, le champ `classe`. le champ `id` permet de définir les relations entre les entités (il ne correspond pas à l'`id` de l'entité dans la base de données). dans les entités, tous les champs qui ne sont pas `classe`, `id` ou `relations` sont interprétés comme des propriétés et sont insérées dans les tables qui correspondent au `datatype`:
@@ -79,14 +143,26 @@ le seul champ requis est, pour chaque entité, le champ `classe`. le champ `id` 
 {"noms": {"prénom": "!", "nom": "?"}}  # ira dans la table prop_json
 ```
 
-l'importation se fait en ajoutant dans la table `import._entite` des données au format décrit ci-dessus et en utilisant la procedure `import.importer()`:
+l'importation se fait à l'aide de la commande `copy`. tous les arguments positionnels sont traités comme des fichiers à importer:
 
-```sql
-call import.importer();
+```bash
+litteralement copy -d mydatabase data1.json data2.json ../*.json
 ```
 
 annoter
 -------
+
+l'annotation peut se faire en ligne de commande ou, pour un meilleur contrôle, en utilisant les modules python.
+
+en ligne de commande, deux options sont requises: `--model` et `--query`. l'argument de `--query` doit être une requête SQL retournant deux colonnes: un `integer` (l'`id` des textes) et un `text` (leur contenu). alternativement, la valeur spécial `all` peut être passée, pour annoter tous les textes pas encore annoter.
+
+```bash
+litteralement annotate --dbname mydatabase \
+    --model './path/to/my/model' \
+    --query 'all' \
+    --n_process 2 \
+    --batch_size 500
+```
 
 ```python
 import psycopg
@@ -103,7 +179,7 @@ litteralement.nlp.text_annotation.annoter(
     # la requête qui doit retourner les ID des textes, et les textes.
     # elle peut en revanche avoir n'importe quelle condition.
     # pour annoter tous les textes pas encore annotés, passer 'all'.
-    query="select id, val from texte",
+    query="select id, val from texte", 
     # le modèle de langue chargé par spacy.
     nlp=nlp,
 )
