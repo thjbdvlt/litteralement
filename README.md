@@ -8,12 +8,11 @@ schémas
 
 les tables du schéma __litteralement__ sont destinées à recevoir les données typiquement produites lors de l'annotation automatique par des librairie de _NLP_ (_token_, _word_, _lemma_, _pos_, _dep_, _feats_, etc.) et organisées de façon à optimiser les performances et l'espace utilisé.
 
-un autre schéma optionnel, __eav__ (qui implémente un modèle générique/EAV minimal) peut être ajouté au schéma __litteralement__ pour avoir une base de données complète. les deux schémas étant indépendants, le schéma __eav__ peut aussi être utilisé seul.
-le modèle générique que j'utilise comme base, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.
+un autre schéma optionnel, __eav__ (qui implémente un modèle générique/EAV minimal) peut être ajouté au schéma __litteralement__ pour avoir une base de données complète. le modèle générique dont il s'inspire, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.
+
+les deux schémas étant indépendants, le schéma __eav__ peut aussi être utilisé seul, et ensemble, ces deux schémas constituent donc un modèle EAV hybride.
 
 [^1]: Francesco Beretta, "Des sources aux données structurées", 14 octobre 2022, [En ligne](https://wiki-arhn.larhra.fr/lib/exe/fetch.php?media=intro_histoire_numerique:beretta_des_sources_aux_donnees_3-8.pdf), license CC BY-SA 4.0.
-
-ensemble, ces deux schémas constituent donc un modèle EAV hybride.
 
 le diagramme ci-dessous représente la structure de la base de données. chaque rectangle représente une table. les flèches traitillées représentent les [héritages](https://www.postgresql.org/docs/current/tutorial-inheritance.html) entre tables: la table __mot__ hérite par exemple de la table __token__ qui elle-même hérite de la table __segment__, les colonnes __texte__, __debut__ et __fin__[^4]. d'un point de vue conceptuelle, la relation d'héritage correspond à la relation _sous-classe de_[^7]. les autres flèches (pleines) représentent des _foreign keys_. les lignes commençant par `_` indiquent, elles-aussi des _foreign keys_: la valeur des colonnes en question est toujours `integer` ou, pour des raisons d'optimisation, `smallint`, car il est très improbable pour certaines tables de dépasser le millier de lignes (typiquement: les _part-of-speech tags_ et _dependency labels_, respectivement stockés dans les tables __nature__ et __fonction__). les colonnes qui commencent par le signe `+` représente des valeurs littérales. si le nom d'une colonne est souligné, cette colonne est utilisée comme _primary key_ (il s'agit toujours de la colonne `id`).
 
