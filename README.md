@@ -1,14 +1,14 @@
 littéralement
 =============
 
-__littéralement__ est un schéma de base de données [postgresql](https://www.postgresql.org/) pour l'analyse automatique de textes en français, conçu pour stocker les annotations produites par la librairie [spacy](https://spacy.io/). C'est aussi une interface minimale en ligne de commande permettant de facilement ajouter des données, d'annoter les textes (avec [spacy](https://spacy.io/)) et de placer le résultat de ces annotations dans la base de données.
+__littéralement__ est un schéma de base de données [PostgreSQL](https://www.postgresql.org/) pour l'analyse automatique de textes en français, conçu pour stocker les annotations produites par la librairie [spaCy](https://spacy.io/). C'est aussi une interface minimale en ligne de commande permettant de facilement ajouter des données, d'annoter les textes (avec [spaCy](https://spacy.io/)) et de placer le résultat de ces annotations dans la base de données.
 
 schémas
 -------
 
 Les tables du schéma `litteralement` sont destinées à recevoir les données typiquement produites lors de l'annotation automatique par des librairie de _NLP_ (_token_, _word_, _lemma_, _pos_, _dep_, _feats_, etc.). Elles sont organisées de façon à optimiser les performances et l'espace utilisé.
 
-Un autre schéma optionnel, `eav` (qui implémente un modèle générique/[EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) minimal) peut être ajouté au schéma `litteralement` pour avoir une base de données complète et flexible, mais assez sommaire. Le modèle générique dont il s'inspire, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.
+Un autre schéma optionnel, `eav` (qui implémente un modèle générique/[EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) minimal) peut être ajouté au schéma `litteralement` pour avoir une base de données complète et flexible, mais assez sommaire. Le [modèle](https://wiki-arhn.larhra.fr/lib/exe/fetch.php?media=intro_histoire_numerique:beretta_des_sources_aux_donnees_3-8.pdf) générique dont il s'inspire, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.
 
 Ensemble, ces deux schémas constituent donc un modèle EAV hybride, mais ils sont indépendants.
 
@@ -46,7 +46,7 @@ Pour ajouter le schéma __litteralement__ à une base de données existante, il 
 litteralement schema -t 'public.texte.id' | psql mydatabase
 ```
 
-Pour annoter des textes avec [spacy](https://spacy.io/) et ajouter le résultat des annotations dans les tables:
+Pour annoter des textes avec [spaCy](https://spacy.io/) et ajouter le résultat des annotations dans les tables:
 
 ```bash
 litteralement annotate --dbname mydatabase \
@@ -62,7 +62,7 @@ litteralement annotate --dbname mydatabase \
 |`-t`|`--text`|la table contenant les textes (commande `schema`)|
 |`-q`|`--query`|la requête SQL pour sélectionner les textes à annoter, qui doit retourner deux colonnes: `integer` (_pk_) et `text` (le texte) (commande `annotate`)|
 
-#### annotation avec spacy
+#### annotation avec spaCy
 
 |courte|longue|
 |------|------|
@@ -94,8 +94,8 @@ tables
 
 ### litteralement
 
-- La structure du schéma __litteralement__ n'est pas spécifique à une librairie de nlp[^5], quoi que des modules spécifiques permettent l'analyse avec [spacy](https://spacy.io/). La délimitation des différents objets, en revanche, est peut-être relativement spécifique à la langue française. En particulier, la table __lexème__ (le mot hors contexte, comme élément du lexique) définit un objet qui regroupe des caractéristiques attribué par [spacy](https://spacy.io/) aux __tokens__, mais qui en français ne varient pas d'un contexte à l'autre. En français, peu importe dans quel contexte on rencontrera le mot "magiques", il n'agira toujours de l'adjectif (_part-of-speech_) "magique" (_lemma_) au pluriel (_morphology_), et sa forme graphique canonique (_norm_) sera toujours "magique". Il est donc inutile d'attribuer ces quatre propriétés à chaque occurrence du mot "magique": les propriétés __lemme__, __nature__, __norme__ et __morphologie__ sont donc, dans une base de données __littéralement__, des propriétés des __lexèmes__, tandis que les __mots__ ont des propriétés contextuelles: __fonctions__ (_dep_: par exemple "obj"), __noyau__ (_head_), ainsi que les propriétés héritées des __tokens__ (__debut__, __fin__, __num__), à quoi s'ajoute la référence au __lexème__ dont ils sont une instance. L'ensemble des ligne de la table __mot__ constitue donc le _discours_ (les mots réelles) tandis que l'ensemble des lignes de la table __lexème__ constitue le _lexique_[^6] (les mots possibles).
-- Les __mots__ eux-mêmes, par ailleurs, sont également un ajout par rapport aux objets utilisés par [spacy](https://spacy.io/) qui ne différencie pas les différents types de [_tokens_](https://spacy.io/api/token). Or, il n'y a pas de sens à attribuer des _lemmes_ à des signes de ponctuation, à des urls, à des emoticons ou des chiffres, ni à leur associer une _analyse morphologique_ car les chiffres ne sont pas _au pluriel_ ni les urls fléchies. Ces objets textuels sont donc, dans une base de données __littéralement__, des __tokens__ mais pas des __mots__, ils n'ont pas de __fonction__ grammaticale ni de __noyau__ (quoi que cela puisse être discutable), ni non plus de __lexème__ (ce qui est en revanche plus légitime à mon avis). De cette façon, le lexique n'est pas pollué par des nombres ou des dates (en nombre virtuellement infini).
+- La structure du schéma __litteralement__ n'est pas spécifique à une librairie de nlp[^5], quoi que des modules spécifiques permettent l'analyse avec [spaCy](https://spacy.io/). La délimitation des différents objets, en revanche, est peut-être relativement spécifique à la langue française. En particulier, la table __lexème__ (le mot hors contexte, comme élément du lexique) définit un objet qui regroupe des caractéristiques attribué par [spaCy](https://spacy.io/) aux __tokens__, mais qui en français ne varient pas d'un contexte à l'autre. En français, peu importe dans quel contexte on rencontrera le mot "magiques", il n'agira toujours de l'adjectif (_part-of-speech_) "magique" (_lemma_) au pluriel (_morphology_), et sa forme graphique canonique (_norm_) sera toujours "magique". Il est donc inutile d'attribuer ces quatre propriétés à chaque occurrence du mot "magique": les propriétés __lemme__, __nature__, __norme__ et __morphologie__ sont donc, dans une base de données __littéralement__, des propriétés des __lexèmes__, tandis que les __mots__ ont des propriétés contextuelles: __fonctions__ (_dep_: par exemple "obj"), __noyau__ (_head_), ainsi que les propriétés héritées des __tokens__ (__debut__, __fin__, __num__), à quoi s'ajoute la référence au __lexème__ dont ils sont une instance. L'ensemble des ligne de la table __mot__ constitue donc le _discours_ (les mots réelles) tandis que l'ensemble des lignes de la table __lexème__ constitue le _lexique_[^6] (les mots possibles).
+- Les __mots__ eux-mêmes, par ailleurs, sont également un ajout par rapport aux objets utilisés par [spaCy](https://spacy.io/) qui ne différencie pas les différents types de [_tokens_](https://spacy.io/api/token). Or, il n'y a pas de sens à attribuer des _lemmes_ à des signes de ponctuation, à des urls, à des emoticons ou des chiffres, ni à leur associer une _analyse morphologique_ car les chiffres ne sont pas _au pluriel_ ni les urls fléchies. Ces objets textuels sont donc, dans une base de données __littéralement__, des __tokens__ mais pas des __mots__, ils n'ont pas de __fonction__ grammaticale ni de __noyau__ (quoi que cela puisse être discutable), ni non plus de __lexème__ (ce qui est en revanche plus légitime à mon avis). De cette façon, le lexique n'est pas pollué par des nombres ou des dates (en nombre virtuellement infini).
 - Les tables __token__, __mot__, __phrase__ ou __span__ héritent toutes de la table __segment__ qui a trois colonnes: __texte__ (l'identifiant du texte dans lequel le segment se trouve), __debut__ (la position du premier caractère) et __fin__ (la position du dernier caractère).
 
 [^5]: _Natural Language Processing_ (analyse automatique de textes en langage naturel).
