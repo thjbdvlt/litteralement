@@ -9,6 +9,7 @@ dependencies = [
     "psycopg[binary]",
     "spacy",
     "tqdm",
+    "tokentype @ git+https://github.com/thjbdvlt/spacy-tokentype"
 ]
 
 [project.scripts]
