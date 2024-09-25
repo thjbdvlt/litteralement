@@ -148,7 +148,7 @@ def annoter(
     # placer les documents dans la table litteralement._document (la méthode 'COPY' est beaucoup plus rapide qu'une insertion normale).
     print("début de l'annotation...")
     with cur_send.copy(
-        "COPY li._document (j, id) FROM STDIN"
+        "COPY import._document (j, id) FROM STDIN"
     ) as copy:
         for i in tqdm(docs):
             doc = todict(i[0], isword=isword, **kwargs)
