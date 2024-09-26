@@ -1,14 +1,14 @@
 littéralement
 =============
 
-__littéralement__ est un schéma de base de données [PostgreSQL](https://www.postgresql.org/) pour l'analyse automatique de textes en français, conçu pour stocker les annotations produites par la librairie [spaCy](https://spacy.io/). C'est aussi une interface minimale en ligne de commande permettant de facilement ajouter des données, d'annoter les textes (avec [spaCy](https://spacy.io/)) et de placer le résultat de ces annotations dans la base de données.
+__littéralement__ est un schéma de base de données [PostgreSQL](https://www.postgresql.org/) pour l'analyse automatique de textes en français, conçu pour stocker les annotations produites par la librairie [spaCy](https://spacy.io/). C'est aussi une interface minimale en ligne de commande permettant de facilement ajouter des données, d'annoter les textes (avec [spaCy](https://spacy.io/)) et de placer le résultat de ces annotations dans la base de données (voir [usage](#usage), plus bas).
 
 schémas
 -------
 
-Les tables du schéma `litteralement` sont destinées à recevoir les données typiquement produites lors de l'annotation automatique par des librairies de _NLP_ (_token_, _word_, _lemma_, _pos_, _dep_, _feats_, etc.). Elles sont organisées de façon à optimiser les performances et l'espace utilisé.
+Les tables du schéma [litteralement](#litteralement) sont destinées à recevoir les données typiquement produites lors de l'annotation automatique par des librairies de _NLP_ (_token_, _word_, _lemma_, _pos_, _dep_, _feats_, etc.). Elles sont organisées de façon à optimiser les performances et l'espace utilisé.
 
-Un autre schéma optionnel, `eav` (qui implémente un modèle générique/[EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) minimal) peut être ajouté au schéma `litteralement` pour avoir une base de données complète et flexible, mais assez sommaire. Le [modèle](https://wiki-arhn.larhra.fr/lib/exe/fetch.php?media=intro_histoire_numerique:beretta_des_sources_aux_donnees_3-8.pdf) générique dont il s'inspire, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.
+Un autre schéma optionnel, [eav](#eav) (qui implémente un modèle générique/[EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) minimal) peut être ajouté au schéma `litteralement` pour avoir une base de données complète et flexible, mais assez sommaire. Le [modèle](https://wiki-arhn.larhra.fr/lib/exe/fetch.php?media=intro_histoire_numerique:beretta_des_sources_aux_donnees_3-8.pdf) générique dont il s'inspire, librement emprunté à Francesco Beretta[^1] (et dont je ne reprends qu'une minuscule partie) est plus complet que ce que désigne le terme [EAV](https://en.wikipedia.org/wiki/Entity-attribute-value_model) (_Entity-Attribute-Value_), puisqu'il n'implémente pas seulement une manière de décrire les propriétés des entités, mais aussi, par exemple, leurs relations.
 
 Ensemble, ces deux schémas constituent donc un modèle EAV hybride, mais ils sont indépendants.
 
@@ -40,7 +40,7 @@ Pour importer dans les tables du modèle EAV des données au format JSON (le for
 litteralement copy -d 'mydatabase' *.json
 ```
 
-Pour ajouter le schéma __litteralement__ à une base de données existante, il faut spécifier la table qui contient les textes afin que soient générées les _foreign keys_ des tables du schéma (la colonne _primary key_ doit être de type `integer`):
+Pour ajouter le schéma __litteralement__ à une base de données existante, il faut spécifier la table qui contient les textes afin que soient générées les _foreign keys_ des tables du schéma. On spécifie cette table _via_ l'option `-t` et sa valeur doit avoir la forme `SCHEMA.TABLE.PRIMARY_KEY` (la colonne _primary key_ doit être de type `integer`):
 
 ```bash
 litteralement schema -t 'public.texte.id' | psql mydatabase
@@ -109,7 +109,7 @@ tables
 - La table __propriete__ permet d'assigner des propriétés aux entités. Une propriété peut optionnellement avoir une valeur et cette valeur peut avoir différents _datatype_: le type de propriété "age" requiert une valeur numérique entière (`integer`), tandis que la propriété "existe" ne nécessite aucune valeur. La propriété "existe" sera donc placée dans la table __propriété__, qui n'a pas de colonne __val__ tandis que la propriété "age" sera placée dans la table __prop_int__, laquelle table hérite de la table __propriete__ et possède en plus une colonne __val__ dont la valeur est un entier (`integer`). Naturellement, il est aussi possible d'insérer manuellement des données "age" comme texte dans la table destinée aux valeurs textuelles, ou dans celle qui est dédiée au format `jsonb`. Le plus facile, néanmoins, est d'utiliser les modules proposés pour l'importation qui insère automatiquement dans la table appropriée (voir plus bas). (Il y a en réalité davantage de table propriétés que dans le diagramme ci-dessous.)
 - C'est par la table __texte__ que sont mises en lien les deux parties de la base de donneés. Elle hérite de la table __propriete__, tout comme les tables __prop_int__ ou __prop_float__ mais elle a également une colonne `id` qui est référencée par la table __segment__ (et toutes les tables qui héritent de __segment__).
 
-format d'importation
+format d'importation (eav)
 --------------------
 
 Si l'insertion d'entités, de propriétés ou de relations peut évidemment se faire manuellement, il est aussi possible d'importer des données structurées au format JSON comme suit, chaque objet JSON décrivant une entité, ses propriétés et les relations dont elle est le sujet.
@@ -143,7 +143,7 @@ L'importation se fait à l'aide de la commande `copy`. Tous les arguments positi
 litteralement copy -d mydatabase data1.json data2.json ../*.json
 ```
 
-annoter
+annoter (litteralement)
 -------
 
 L'annotation peut se faire en ligne de commande ou, pour un meilleur contrôle, en utilisant les modules python.
@@ -215,7 +215,8 @@ lex_user_attrs = [
     },
 ]
 
-# ces annotations supplémentaires seront automatiquement importées dans la table "lexeme", dans une colonne "random_morph".
+# ces annotations supplémentaires seront automatiquement
+# importées dans la table "lexeme", dans une colonne "random_morph".
 litteralement.nlp.text_annotation.annoter(
     conn,
     lex_user_attrs=lex_user_attrs
