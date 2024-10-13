@@ -34,9 +34,7 @@ def todict(
 
     sents = []
     token_sent_idx = []
-    for n, sent in enumerate(doc.sents, 1):
-        for i in sent:
-            token_sent_idx.append(n)
+    for n_sent, sent in enumerate(doc.sents, 1):
         if len(sent) > 0:
             first_token_start = sent[0].idx
             last_token = sent[-1]
@@ -45,40 +43,43 @@ def todict(
                 {
                     "debut": first_token_start + 1,
                     "fin": last_token_end + 1,
-                    "n": n,
+                    "n": n_sent,
                 }
             )
 
-    for token in doc:
-        start_char = token.idx + 1
-        end_char = start_char + len(token.text)
-        i = token.i
-        d = {
-            "debut": start_char,
-            "fin": end_char,
-            "num": i,
-            "phrase": token_sent_idx[i],
-        }
-        if isword(token):
-            d.update(
-                {
-                    "fonction": token.dep_,
-                    "noyau": token.head.i,
-                    "lexeme": {
-                        "nature": token.pos_.lower(),
-                        "morph": str(token.morph),
-                        "norme": token.norm_,
-                        "lemme": token.lemma_,
-                    },
-                }
-            )
-            for i in lex_user_attrs:
-                k = i["name"]
-                fn = i["function"]
-                d["lexeme"][k] = fn(token)
-            words.append(d)
-        else:
-            nonwords.append(d)
+        for n, token in enumerate(sent, 1):
+            token_sent_idx.append(n_sent)
+            start_char = token.idx + 1
+            end_char = start_char + len(token.text)
+            i = token.i
+            d = {
+                "debut": start_char,
+                "fin": end_char,
+                "num": n,
+                "phrase": token_sent_idx[i],
+            }
+
+            if isword(token):
+                d.update(
+                    {
+                        "fonction": token.dep_,
+                        "noyau": token.head.i,
+                        "lexeme": {
+                            "nature": token.pos_.lower(),
+                            "morph": str(token.morph),
+                            "norme": token.norm_,
+                            "lemme": token.lemma_,
+                        },
+                    }
+                )
+                for i in lex_user_attrs:
+                    k = i["name"]
+                    fn = i["function"]
+                    d["lexeme"][k] = fn(token)
+                words.append(d)
+
+            else:
+                nonwords.append(d)
 
     spans = []
     for i in doc.spans:
