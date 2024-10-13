@@ -216,7 +216,9 @@ def _insert_mots(conn, **kwargs):
         phrase int,
         lexeme jsonb, 
         noyau int
-    ) join {schema}.fonction f on x.fonction = f.nom""")
+    )
+    join {schema}.fonction f on x.fonction = f.nom
+    """)
     s_temp = s_temp.format(
         doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA)
     )
@@ -239,7 +241,16 @@ def _insert_mots(conn, **kwargs):
     print(1.5, "insertion des mots...")
     # ajoute les mots
     sql_add_mot = SQL("""
-    insert into {schema}.mot (texte, debut, fin, num, phrase, noyau, fonction, lexeme)
+    insert into {schema}.mot (
+        texte,
+        phrase,
+        debut,
+        fin,
+        num,
+        noyau,
+        fonction,
+        lexeme
+    )
     select
         m.texte,
         m.debut,
@@ -250,9 +261,9 @@ def _insert_mots(conn, **kwargs):
         m.fonction,
         x.id
     from _mot m
-    join id_jsonb_lex x on x.j = m.lexeme;""").format(
-        schema=Identifier(SCHEMA)
-    )
+    join id_jsonb_lex x on x.j = m.lexeme
+    join phrase p on p.texte = m.texte and m.phrase = p.n
+    """).format(schema=Identifier(SCHEMA))
     conn.execute(sql_add_mot)
     print("mots OK!")
 
