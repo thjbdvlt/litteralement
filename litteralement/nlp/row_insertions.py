@@ -242,7 +242,6 @@ def _insert_mots(conn, **kwargs):
     # ajoute les mots
     sql_add_mot = SQL("""
     insert into {schema}.mot (
-        texte,
         phrase,
         debut,
         fin,
@@ -252,11 +251,10 @@ def _insert_mots(conn, **kwargs):
         lexeme
     )
     select
-        m.texte,
+        p.id as phrase,
         m.debut,
         m.fin,
         m.num,
-        m.phrase,
         m.noyau,
         m.fonction,
         x.id
@@ -308,21 +306,31 @@ def _insert_tokens(conn, **kwargs):
     """
 
     s = SQL("""
+        with _token as (
+            select
+                d.id as texte,
+                x.debut,
+                x.fin,
+                x.num,
+                x.phrase
+            from {doc} d,
+            jsonb_to_recordset(d.j -> 'nonmots') as x(
+                phrase integer,
+                num integer,
+                debut integer,
+                fin integer
+            )
+        )
         insert into {schema}.token 
-            (texte, debut, fin, num, phrase)
+            (phrase, num, debut, fin)
         select
-            d.id as texte,
-            x.debut,
-            x.fin,
-            x.num,
-            x.phrase
-        from {doc} d,
-        jsonb_to_recordset(d.j -> 'nonmots') as x(
-            debut integer,
-            fin integer,
-            num integer,
-            phrase integer
-        );
+            p.id,
+            t.num,
+            t.debut,
+            t.fin
+        from _token t
+        join phrase p on p.texte = t.texte
+        and t.num = t.phrase
     """)
 
     s = s.format(doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA))
