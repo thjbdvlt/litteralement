@@ -316,6 +316,7 @@ CREATE VIEW litteralement.nonstop_lexeme AS
 --
 
 CREATE TABLE litteralement.phrase (
+    n integer
 )
 INHERITS (litteralement.segment);
 

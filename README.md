@@ -51,7 +51,7 @@ Pour annoter des textes avec [spaCy](https://spacy.io/) et ajouter le résultat 
 ```bash
 litteralement annotate --dbname mydatabase \
     --model 'fr_core_news_lg' \
-    --query 'select id, val from text'
+    --query 'select id, val from texte'
 ```
 
 ### options

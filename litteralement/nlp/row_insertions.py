@@ -268,18 +268,18 @@ def _insert_phrases(conn, **kwargs):
         insert into {schema}.phrase (
             texte,
             debut,
-            longueur,
+            fin,
             n
         )
         select
             d.id as texte,
             x.debut,
-            x.longueur,
+            x.fin,
             x.n
         from {doc} d,
         jsonb_to_recordset(d.j -> 'phrases') as x(
             debut integer,
-            longueur integer,
+            fin integer,
             n integer
         );
     """)

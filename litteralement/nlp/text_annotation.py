@@ -32,10 +32,22 @@ def todict(
     words = []
     nonwords = []
 
+    sents = []
     token_sent_idx = []
     for n, sent in enumerate(doc.sents, 1):
         for i in sent:
             token_sent_idx.append(n)
+        if len(sent) > 0:
+            first_token_start = sent[0].idx
+            last_token = sent[-1]
+            last_token_end = last_token.idx + len(last_token.text)
+            sents.append(
+                {
+                    "debut": first_token_start + 1,
+                    "fin": last_token_end + 1,
+                    "n": n,
+                }
+            )
 
     for token in doc:
         start_char = token.idx + 1
@@ -67,16 +79,6 @@ def todict(
             words.append(d)
         else:
             nonwords.append(d)
-
-    sents = []
-    for n, sent in enumerate(doc.sents, 1):
-        sents.append(
-            {
-                "debut": i.start_char + 1,
-                "longueur": i.start_char - i.end_char,
-                "n": n,
-            }
-        )
 
     spans = []
     for i in doc.spans:
