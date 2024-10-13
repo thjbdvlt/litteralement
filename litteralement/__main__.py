@@ -54,7 +54,7 @@ def cli_annotate(args) -> None:
     kwargs = {i: getattr(args, i) for i in ("n_process", "batch_size")}
     kwargs = {k: v for k, v in kwargs.items() if v}
     text_annotation.annoter(
-        conn=conn, nlp=nlp, query=args.query, **kwargs
+        conn=conn, nlp=nlp, query=args.query.read(), **kwargs
     )
     conn.commit()
     conn.close()
@@ -154,11 +154,10 @@ sub_schema.add_argument(
 
 # sub-command "annotate"
 sub_annotate.add_argument(
-    "-q",
-    "--query",
+    "query",
     metavar="QUERY",
     action="store",
-    required=True,
+    type=argparse.FileType('r'),
     help="the SQL SELECT query to get texts. the query must returns two rows: one for the text id (int), and one for the text content (text). the special value 'all' can be used to annotate all unanotated texts in the table \"text\".",
 )
 sub_annotate.add_argument(
