@@ -265,15 +265,22 @@ def _insert_phrases(conn, **kwargs):
     """
 
     s = SQL("""
-        insert into {schema}.phrase
+        insert into {schema}.phrase (
+            texte,
+            debut,
+            longueur,
+            n
+        )
         select
             d.id as texte,
             x.debut,
-            x.fin
+            x.longueur,
+            x.n
         from {doc} d,
         jsonb_to_recordset(d.j -> 'phrases') as x(
             debut integer,
-            fin integer
+            longueur integer,
+            n integer
         );
     """)
 
@@ -349,6 +356,8 @@ def inserer(conn, keep_data=False, **kwargs):
 
     conn.execute("set search_path to litteralement, eav, public")
 
+    _insert_phrases(conn, **kwargs)
+    print("phrases OK!")
     print(1)
     _insert_mots(conn, **kwargs)
     print(2, "insertions des tokens (non-mots)...")
@@ -358,8 +367,6 @@ def inserer(conn, keep_data=False, **kwargs):
     _insert_spans(conn, **kwargs)
     print("spans OK!")
     print(4, "insertion des phrases...")
-    _insert_phrases(conn, **kwargs)
-    print("phrases OK!")
 
     if keep_data is False:
         doctable = qualify(DOC_TABLE)
