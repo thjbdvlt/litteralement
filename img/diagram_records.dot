@@ -231,8 +231,8 @@ _ <font color="turquoise">texte</font> <i><font color="grey">int</font></i><br a
             height=1.6
             fontname=arial
             fontsize=18
-            fontcolor="blue"
-            color="blue"
+            fontcolor="mediumvioletred"
+            color="mediumvioletred"
             style=bold
         ]
 
@@ -251,8 +251,8 @@ _ <font color="turquoise">texte</font> <i><font color="grey">int</font></i><br a
             height=1.4
             fontname=arial
             fontsize=18
-            fontcolor="blue"
-            color="blue"
+            fontcolor="mediumvioletred"
+            color="mediumvioletred"
             style=bold
         ]
 
@@ -261,7 +261,7 @@ _ <font color="turquoise">texte</font> <i><font color="grey">int</font></i><br a
             shape=record
             label= <{
 <b>token</b> |
-_ phrase <i><font color="grey">int</font></i><br align="left"/>
+_ <font color="mediumvioletred">phrase</font> <i><font color="grey">int</font></i><br align="left"/>
 + num <i><font color="grey">int</font></i><br align="left"/>
 + debut <i><font color="grey">int</font></i><br align="left"/>
 + longueur <i><font color="grey">smallint</font></i><br align="left"/>
@@ -392,7 +392,7 @@ _ <font color="violet">morph</font> <i><font color="grey">smallint</font></i><br
         // texte -> segment [label=est_dans color="turquoise" fontcolor="turquoise" dir=back fontname=arial]
         texte -> phrase [label=est_dans color="turquoise" fontcolor="turquoise" dir=back fontname=arial]
         texte -> span [label=est_dans color="turquoise" fontcolor="turquoise" dir=back fontname=arial]
-        phrase -> token [label=est_dans color="blue" fontcolor="blue" dir=back fontname=arial]
+        phrase -> token [label=est_dans color="mediumvioletred" fontcolor="mediumvioletred" dir=back fontname=arial]
 
         // segment -> phrase [style=dashed arrowhead=empty color="blue" dir=back]
         // segment -> span [style=dashed arrowhead=empty color="blue" dir=back]
