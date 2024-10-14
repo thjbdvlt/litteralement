@@ -14,7 +14,9 @@ Ensemble, ces deux schémas constituent donc un modèle EAV hybride, mais ils so
 
 [^1]: Francesco Beretta, "Des sources aux données structurées", 14 octobre 2022, [En ligne](https://wiki-arhn.larhra.fr/lib/exe/fetch.php?media=intro_histoire_numerique:beretta_des_sources_aux_donnees_3-8.pdf), license CC BY-SA 4.0.
 
-Le diagramme ci-dessous représente la structure de la base de données. Chaque rectangle représente une table. Les flèches traitillées représentent les [héritages](https://www.postgresql.org/docs/current/tutorial-inheritance.html) entre tables. La table __mot__ hérite par exemple de la table __token__ les colonnes __texte__, __debut__ et __fin__[^4]. D'un point de vue conceptuelle, la relation d'héritage correspond à la relation _sous-classe de_[^7]. Les autres flèches (pleines) représentent des _foreign keys_. Les lignes commençant par `_` indiquent, elles aussi des _foreign keys_: la valeur des colonnes en question est toujours `integer` ou, pour des raisons d'optimisation, `smallint`, car il est très improbable pour certaines tables de dépasser le millier de lignes (typiquement: les _part-of-speech tags_ et _dependency labels_, respectivement stockés dans les tables __nature__ et __fonction__). Les colonnes qui commencent par le signe `+` représente des valeurs littérales. Si le nom d'une colonne est souligné, cette colonne est utilisée comme _primary key_ (il s'agit toujours de la colonne `id`).
+Le diagramme ci-dessous représente la structure de la base de données. Chaque rectangle représente une table. Les flèches traitillées représentent les [héritages](https://www.postgresql.org/docs/current/tutorial-inheritance.html) entre tables. La table __mot__ hérite par exemple de la table __token__ les colonnes __texte__, __debut__ et __fin__[^4]. D'un point de vue conceptuelle, la relation d'héritage correspond à la relation _A est une sous-classe de B_[^7]. Les autres flèches (pleines) représentent des _foreign keys_. Les lignes commençant par `_` indiquent, elles aussi des _foreign keys_: la valeur des colonnes en question est toujours `integer` ou, pour des raisons d'optimisation, `smallint`, car il est très improbable pour certaines tables de dépasser le millier de lignes (typiquement: les _part-of-speech tags_ et _dependency labels_, respectivement stockés dans les tables __nature__ et __fonction__). Les colonnes qui commencent par le signe `+` représente des valeurs littérales. Si le nom d'une colonne est souligné, cette colonne est utilisée comme _primary key_ (il s'agit toujours de la colonne `id`).
+
+(Pour une description et détaillées des tables, voir [plus bas](#tables).)
 
 ![](./img/diagram-phrase.svg)
 
@@ -56,29 +58,28 @@ litteralement annotate --dbname mydatabase \
 
 ### options
 
-|courte|longue|description|
-|------|------|----|
-|`-l`|`--jsonl`|format JSONL (commande `copy`).|
-|`-t`|`--text`|la table contenant les textes (commande `schema`)|
-|`-q`|`--query`|la requête SQL pour sélectionner les textes à annoter, qui doit retourner deux colonnes: `integer` (_pk_) et `text` (le texte) (commande `annotate`)|
+`-l` `--jsonl`
+: format JSONL (commande `copy`).
+
+`-t` `--text`
+: la table contenant les textes (commande `schema`)
+
+`-q` `--query`
+: la requête SQL pour sélectionner les textes à annoter, qui doit retourner deux colonnes: `integer` (_pk_) et `text` (le texte) (commande `annotate`)
 
 #### annotation avec spaCy
 
-|courte|longue|
-|------|------|
-|`-n`|`--n_process`|
-|`-b`|`--batch_size`|
-|`-m`|`--model`|
+`-n` `--n_process`
+`-b` `--batch_size`
+`-m` `--model`
 
 #### connexion à la base de données
 
-|courte|longue|
-|------|------|
-|`-d`|`--dbname`|
-|`-U`|`--user`|
-|`-p`|`--port`|
-|`-H`|`--host`|
-|`-P`|`--password`|
+`-d` `--dbname`
+`-U` `--user`
+`-p` `--port`
+`-H` `--host`
+`-P` `--password`
 
 <!--
 modèle EAV hybride
