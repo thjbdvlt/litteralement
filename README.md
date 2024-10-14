@@ -16,7 +16,7 @@ Ensemble, ces deux schémas constituent donc un modèle EAV hybride, mais ils so
 
 Le diagramme ci-dessous représente la structure de la base de données. Chaque rectangle représente une table. Les flèches traitillées représentent les [héritages](https://www.postgresql.org/docs/current/tutorial-inheritance.html) entre tables. La table __mot__ hérite par exemple de la table __token__ qui elle-même hérite de la table __segment__, les colonnes __texte__, __debut__ et __fin__[^4]. D'un point de vue conceptuelle, la relation d'héritage correspond à la relation _sous-classe de_[^7]. Les autres flèches (pleines) représentent des _foreign keys_. Les lignes commençant par `_` indiquent, elles aussi des _foreign keys_: la valeur des colonnes en question est toujours `integer` ou, pour des raisons d'optimisation, `smallint`, car il est très improbable pour certaines tables de dépasser le millier de lignes (typiquement: les _part-of-speech tags_ et _dependency labels_, respectivement stockés dans les tables __nature__ et __fonction__). Les colonnes qui commencent par le signe `+` représente des valeurs littérales. Si le nom d'une colonne est souligné, cette colonne est utilisée comme _primary key_ (il s'agit toujours de la colonne `id`).
 
-![](./img/diagram_records.svg)
+![](./img/diagram_records_phrases.svg)
 
 [^4]: Les _foreign keys_ (comme, pour le cas de segment, _texte.id_) ne se transmettent par héritage; elles sont systématiquement ajoutées dans la définition du schéma, ainsi que toutes les autres contraintes.
 
