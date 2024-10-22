@@ -42,7 +42,7 @@ def todict(
             sents.append(
                 {
                     "debut": first_token_start + 1,
-                    "fin": last_token_end + 1,
+                    "lon": last_token_end - first_token_start,
                     "n": n_sent,
                 }
             )
@@ -54,8 +54,8 @@ def todict(
             i = token.i
             d = {
                 "debut": start_char,
-                "fin": end_char,
-                "num": n,
+                "lon": end_char - start_char,
+                "n": n,
                 "phrase": token_sent_idx[i],
             }
 
@@ -85,7 +85,7 @@ def todict(
     for i in doc.spans:
         d = {
             "debut": i.start_char + 1,
-            "fin": i.end_char + 1,
+            "lon": i.end_char - i.start_char,
             "attrs": add_span_attrs(i),
         }
 

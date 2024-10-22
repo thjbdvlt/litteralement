@@ -202,8 +202,8 @@ def _insert_mots(conn, **kwargs):
         d.id as texte,
         f.id as fonction,
         x.debut,
-        x.fin,
-        x.num,
+        x.lon,
+        x.n,
         x.phrase,
         x.lexeme,
         x.noyau
@@ -211,11 +211,11 @@ def _insert_mots(conn, **kwargs):
     jsonb_to_recordset(d.j -> 'mots') as x (
         fonction text,
         debut int, 
-        fin int, 
-        num int, 
+        lon smallint, 
+        n smallint, 
         phrase int,
         lexeme jsonb, 
-        noyau int
+        noyau smallint
     )
     join {schema}.fonction f on x.fonction = f.nom
     """)
@@ -244,8 +244,8 @@ def _insert_mots(conn, **kwargs):
     insert into {schema}.mot (
         phrase,
         debut,
-        fin,
-        num,
+        lon,
+        n,
         noyau,
         fonction,
         lexeme
@@ -253,8 +253,8 @@ def _insert_mots(conn, **kwargs):
     select
         p.id as phrase,
         m.debut,
-        m.fin,
-        m.num,
+        m.lon,
+        m.n,
         m.noyau,
         m.fonction,
         x.id
@@ -277,18 +277,18 @@ def _insert_phrases(conn, **kwargs):
         insert into {schema}.phrase (
             texte,
             debut,
-            fin,
+            lon,
             n
         )
         select
             d.id as texte,
             x.debut,
-            x.fin,
+            x.lon,
             x.n
         from {doc} d,
         jsonb_to_recordset(d.j -> 'phrases') as x(
             debut integer,
-            fin integer,
+            lon integer,
             n integer
         );
     """)
@@ -310,27 +310,27 @@ def _insert_tokens(conn, **kwargs):
             select
                 d.id as texte,
                 x.debut,
-                x.fin,
-                x.num,
+                x.lon,
+                x.n,
                 x.phrase
             from {doc} d,
             jsonb_to_recordset(d.j -> 'nonmots') as x(
                 phrase integer,
-                num integer,
+                n integer,
                 debut integer,
-                fin integer
+                lon integer
             )
         )
         insert into {schema}.token 
-            (phrase, num, debut, fin)
+            (phrase, n, debut, lon)
         select
             p.id,
-            t.num,
+            t.n,
             t.debut,
-            t.fin
+            t.lon
         from _token t
         join phrase p on p.texte = t.texte
-        and t.num = t.phrase
+        and t.n = t.phrase
     """)
 
     s = s.format(doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA))
@@ -349,12 +349,12 @@ def _insert_spans(conn, **kwargs):
         select
             d.id as texte,
             x.debut,
-            x.fin,
+            x.lon,
             x.attrs
         from {doc} d,
         jsonb_to_recordset(d.j -> 'spans') as x(
             debut integer,
-            fin integer,
+            lon integer,
             attrs jsonb
         );
     """)
