@@ -18,7 +18,7 @@ Le diagramme ci-dessous représente la structure de la base de données. Chaque 
 
 (Pour une description et détaillées des tables, voir [plus bas](#tables).)
 
-![](./img/diagram-phrase.svg)
+![](./img/diagram-2024-10-23.svg)
 
 [^4]: Les _foreign keys_ ne se transmettent pas par héritage; elles sont systématiquement ajoutées dans la définition du schéma, ainsi que toutes les autres contraintes.
 
