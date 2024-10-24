@@ -305,14 +305,16 @@ def _insert_tokens(conn, **kwargs):
         conn (Connection)
     """
 
-    # TEST: les tables punct, number, etc.
+    doc_table = qualify(DOC_TABLE)
     cur = conn.cursor()
-    cur.execute(
-        "select distinct jsonb_object_keys(d.j -> 'nonmots') from litteralement._document d"
+    s = SQL(
+        "select distinct jsonb_object_keys(d.j -> 'nonmots') from {doc} d"
     )
+    s = s.format(doc=doc_table)
+    cur.execute(s)
     tokentypes = [i[0] for i in cur.fetchall()]
     tokentypes = [i for i in tokentypes if i != "mot"]
-    print('TOKENTYPES:', tokentypes)
+    print("TOKENTYPES:", tokentypes)
 
     s = SQL("""
         with _token as (
@@ -351,7 +353,7 @@ def _insert_tokens(conn, **kwargs):
             ).format(table=table)
         )
         f = s.format(
-            doc=qualify(DOC_TABLE),
+            doc=doc_table,
             schema=Identifier(SCHEMA),
             table=table,
         )
