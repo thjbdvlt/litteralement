@@ -600,9 +600,9 @@ ALTER TABLE ONLY litteralement.mot
 --
 -- Name: phrase phrase_texte_fk; Type: FK CONSTRAINT; Schema: litteralement; Owner: -
 --
-
-ALTER TABLE ONLY litteralement.phrase
-    ADD CONSTRAINT phrase_texte_fk FOREIGN KEY (texte) REFERENCES eav.texte(id);
+--
+-- ALTER TABLE ONLY litteralement.phrase
+--     ADD CONSTRAINT phrase_texte_fk FOREIGN KEY (texte) REFERENCES eav.texte(id);
 
 
 --
