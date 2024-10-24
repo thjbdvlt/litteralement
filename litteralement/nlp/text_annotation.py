@@ -6,9 +6,11 @@ from tqdm import tqdm
 
 def todict(
     doc,
-    isword=lambda token: any((char.isalpha() for char in token.text))
-    and not any((token.like_url, token.like_email)),
-    add_token_attrs=lambda token: {},
+    keep_types=['punct'],
+    # isword=lambda token: any((char.isalpha() for char in token.text))
+    # isword=lambda token: any((char.isalpha() for char in token.text))
+    # and not any((token.like_url, token.like_email)),
+    # add_token_attrs=lambda token: {},
     add_word_attrs=lambda token: {},
     add_span_attrs=lambda span: {},
     add_lex_attrs=lambda token: {},
@@ -29,8 +31,9 @@ def todict(
     Returns (dict)
     """
 
+    keep_types = set(keep_types)
     words = []
-    nonwords = []
+    nonwords = {'token': []}
 
     sents = []
     token_sent_idx = []
@@ -48,6 +51,7 @@ def todict(
             )
 
         for n, token in enumerate(sent, 1):
+            _type = token._.tokentype
             token_sent_idx.append(n_sent)
             start_char = token.idx + 1
             end_char = start_char + len(token.text)
@@ -59,7 +63,8 @@ def todict(
                 "phrase": token_sent_idx[i],
             }
 
-            if isword(token):
+            # if isword(token):
+            if _type == 'word':
                 d.update(
                     {
                         "fonction": token.dep_,
@@ -77,9 +82,13 @@ def todict(
                     fn = i["function"]
                     d["lexeme"][k] = fn(token)
                 words.append(d)
-
+            elif _type in keep_types:
+                try:
+                    nonwords[_type].append(d)
+                except KeyError:
+                    nonwords[_type] = [d]
             else:
-                nonwords.append(d)
+                nonwords['token'].append(d)
 
     spans = []
     for i in doc.spans:
@@ -159,7 +168,8 @@ def annoter(
         "COPY litteralement._document (j, id) FROM STDIN"
     ) as copy:
         for i in tqdm(docs):
-            doc = todict(i[0], isword=isword, **kwargs)
+            # doc = todict(i[0], isword=isword, **kwargs)
+            doc = todict(i[0], keep_types=['punct'], **kwargs)
             row = (json.dumps(doc)), i[1]["id"]
             copy.write_row(row)
 

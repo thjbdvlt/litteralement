@@ -255,7 +255,7 @@ _ <font color="turquoise">texte</font> <i><font color="grey">int</font></i><br a
             label= <{
 <b>token</b> |
 _ <font color="mediumvioletred">phrase</font> <i><font color="grey">int</font></i><br align="left"/>
-+ num <i><font color="grey">int</font></i><br align="left"/>
++ n <i><font color="grey">smallint</font></i><br align="left"/>
 + debut <i><font color="grey">int</font></i><br align="left"/>
 + longueur <i><font color="grey">smallint</font></i><br align="left"/>
 }>
@@ -416,16 +416,11 @@ _ <font color="violet">morph</font> <i><font color="grey">smallint</font></i><br
         ]
 
         texte -> segment [label=est_dans color="turquoise" fontcolor="turquoise" dir=back fontname=arial]
-        // texte -> phrase [label=est_dans color="turquoise" fontcolor="turquoise" dir=back fontname=arial]
-        // texte -> span [label=est_dans color="turquoise" fontcolor="turquoise" dir=back fontname=arial]
         segment -> phrase [style=dashed arrowhead=empty color="mediumvioletred" dir=back]
         segment -> span [style=dashed arrowhead=empty color="mediumvioletred" dir=back]
 
         phrase -> token [label=est_dans color="mediumvioletred" fontcolor="mediumvioletred" dir=back fontname=arial]
 
-        // segment -> phrase [style=dashed arrowhead=empty color="blue" dir=back]
-        // segment -> span [style=dashed arrowhead=empty color="blue" dir=back]
-        // segment -> token [style=dashed arrowhead=empty color="blue" dir=back]
         token -> mot [style=dashed arrowhead=empty color="blue" dir=back]
         token -> ponctuation [style=dashed arrowhead=empty color="blue" dir=back]
         token -> nombre [style=dashed arrowhead=empty color="blue" dir=back]

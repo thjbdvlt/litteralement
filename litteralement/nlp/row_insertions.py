@@ -305,6 +305,15 @@ def _insert_tokens(conn, **kwargs):
         conn (Connection)
     """
 
+    # TEST: les tables punct, number, etc.
+    cur = conn.cursor()
+    cur.execute(
+        "select distinct jsonb_object_keys(d.j -> 'nonmots') from litteralement._document d"
+    )
+    tokentypes = [i[0] for i in cur.fetchall()]
+    tokentypes = [i for i in tokentypes if i != "mot"]
+    print('TOKENTYPES:', tokentypes)
+
     s = SQL("""
         with _token as (
             select
@@ -314,14 +323,14 @@ def _insert_tokens(conn, **kwargs):
                 x.n,
                 x.phrase
             from {doc} d,
-            jsonb_to_recordset(d.j -> 'nonmots') as x(
+            jsonb_to_recordset(d.j -> 'nonmots' -> %s) as x(
                 phrase integer,
                 n integer,
                 debut integer,
                 lon integer
             )
         )
-        insert into {schema}.token 
+        insert into {schema}.{table}
             (phrase, n, debut, lon)
         select
             p.id,
@@ -330,12 +339,23 @@ def _insert_tokens(conn, **kwargs):
             t.lon
         from _token t
         join phrase p on p.texte = t.texte
-        and t.n = t.phrase
+        and p.n = t.phrase
     """)
 
-    s = s.format(doc=qualify(DOC_TABLE), schema=Identifier(SCHEMA))
-
-    conn.execute(s)
+    for ty in tokentypes:
+        print(ty)
+        table = Identifier(ty)
+        cur.execute(
+            SQL(
+                "create table if not exists {table} () inherits (litteralement.token)"
+            ).format(table=table)
+        )
+        f = s.format(
+            doc=qualify(DOC_TABLE),
+            schema=Identifier(SCHEMA),
+            table=table,
+        )
+        conn.execute(f, (ty,))
 
 
 def _insert_spans(conn, **kwargs):
@@ -375,6 +395,7 @@ def inserer(conn, keep_data=False, **kwargs):
 
     conn.execute("set search_path to litteralement, eav, public")
 
+    print(0, "insertion des phrases...")
     _insert_phrases(conn, **kwargs)
     print("phrases OK!")
     print(1)
@@ -385,7 +406,6 @@ def inserer(conn, keep_data=False, **kwargs):
     print(3, "insertions des spans...")
     _insert_spans(conn, **kwargs)
     print("spans OK!")
-    print(4, "insertion des phrases...")
 
     if keep_data is False:
         doctable = qualify(DOC_TABLE)
