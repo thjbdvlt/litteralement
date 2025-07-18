@@ -1,0 +1,459 @@
+digraph {
+    nodesep=1
+
+    subgraph cluster_eav {
+        style=dotted
+        color=turquoise
+        {rank=same; class; relation_type; attr_type}
+
+        entity [
+            shape=record
+            label= <{
+<b>entity</b> |
++ <u>id</u> <i><font color="grey">int</font></i><br align="left"/>
+_ <font color="orange">class</font> <i><font color="grey">smallint</font></i>
+}>
+            fixedsize=true
+            width=2.2
+            height=1
+            fontname=arial
+            fontsize=18
+            style=bold
+        ]
+
+        relation [
+            shape=record
+            label= <{
+<b>relation</b> |
+_ <font color="orange">type</font> <i><font color="grey">smallint</font></i><br align="left"/>
+_ sub <i><font color="grey">int</font></i><br align="left"/>
+_ obj <i><font color="grey">int</font></i><br align="left"/>
+}>
+            fixedsize=true
+            width=2.2
+            height=1.2
+            fontsize=18
+            fontname=arial
+            style=bold
+        ]
+
+        attribute [
+            shape=record
+            label= <{
+<b>attribute</b> |
+_ <font color="orange">type</font> <i><font color="grey">smallint</font></i><br align="left"/>
+_ entity <i><font color="grey">int</font></i><br align="left"/>
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=1
+            fontsize=18
+            fontname=arial
+        ]
+
+        concept [
+            shape=record
+            label= <{
+<b>concept</b> |
++ name <i><font color="grey">text</font></i><br align="left"/>
++ définition <i><font color="grey">text</font></i><br align="left"/>
+}>
+            color=orange
+            fontcolor=orange
+            fontsize=18
+            fontname=arial
+            fixedsize=true
+            width=2.0
+            height=1.2
+        ]
+
+        class [
+            shape=record
+            label= <{
+<b>class</b> |
++ <u>id</u> <i><font color="grey">smallint</font></i><br align="left"/>
+}>
+            color=orange
+            fontcolor=orange
+            fontsize=18
+            fontname=arial
+            fixedsize=true
+            width=2.2
+            height=0.8
+        ]
+
+        relation_type [
+            shape=record
+            label= <{
+<b>relation_type</b> |
++ <u>id</u> <i><font color="grey">smallint</font></i><br align="left"/>
+}>
+            color=orange
+            fontcolor=orange
+            fontsize=18
+            fontname=arial
+            fixedsize=true
+            width=2.2
+            height=0.8
+        ]
+
+        attr_type [
+            shape=record
+            label= <{
+<b>attr_type</b> |
++ <u>id</u> <i><font color="grey">smallint</font></i><br align="left"/>
+}>
+            color=orange
+            fontcolor=orange
+            fontsize=18
+            fontname=arial
+            fixedsize=true
+            width=2.2
+            height=0.8
+        ]
+
+    class -> concept [style=dashed color=orange arrowhead=empty]
+    attr_type -> concept [style=dashed color=orange arrowhead=empty]
+    relation_type -> concept [style=dashed color=orange arrowhead=empty]
+    relation -> relation_type [label=has_type color=orange fontcolor=orange fontname=arial]
+    entity -> class [label=is_instance_of color=orange fontcolor=orange fontname=arial]
+    attribute -> attr_type [label=has_type color=orange fontcolor=orange fontname=arial]
+    relation -> entity [label=has_object fontname=arial]
+    relation -> entity [label=has_subject fontname=arial]
+    attribute -> entity [label=belongs_to fontname=arial]
+
+    subgraph cluster_attr{
+        style=dotted
+        color=lightgrey
+
+        string [
+            shape=record
+            label= <{
+<b>string</b> |
++id <font color="turquoise">id</font> <i><font color="grey">int</font></i><br align="left"/>
++ val <i><font color="grey">text</font></i><br align="left"/>
+}>
+            fixedsize=true
+            width=2.2
+            height=1
+            fontname=arial
+            fontsize=18
+            fontcolor="turquoise"
+            color="turquoise"
+            style=bold
+        ]
+
+        attr_date [
+            shape=record
+            label= <{
+<b>attr_date</b> |
++ val <i><font color="grey">timestamp</font></i><br align="left"/>
+}>
+            fixedsize=true
+            width=2.2
+            height=0.8
+            fontname=arial
+            fontsize=18
+            fontcolor="turquoise"
+            color="turquoise"
+            style=bold
+        ]
+
+        attr_int [
+            shape=record
+            label= <{
+<b>attr_int</b> |
++ val <i><font color="grey">int</font></i><br align="left"/>
+}>
+            fixedsize=true
+            width=2.2
+            height=0.8
+            fontname=arial
+            fontsize=18
+            fontcolor="turquoise"
+            color="turquoise"
+            style=bold
+        ]
+
+    }
+
+    string -> attribute [style=dashed color="turquoise" arrowhead=empty]
+    attr_date -> attribute [style=dashed color="turquoise" arrowhead=empty]
+    attr_int -> attribute [style=dashed color="turquoise" arrowhead=empty]
+
+    }
+
+    subgraph cluster_nlp {
+        style=dotted
+        color=violet
+
+//         seg [
+//             shape=record
+//             label= <{
+// <b>segment</b> |
+// _ <font color="turquoise">string</font> <i><font color="grey">int</font></i><br align="left"/>
+// + idx <i><font color="grey">int</font></i><br align="left"/>
+// + len <i><font color="grey">int</font></i><br align="left"/>
+// }>
+//             fixedsize=true
+//             width=2.2
+//             height=1.2
+//             fontname=arial
+//             fontsize=18
+//             fontcolor="mediumvioletred"
+//             color="mediumvioletred"
+//             style=bold
+//         ]
+
+        par [
+            shape=record
+            label= <{
+<b>paragraph</b> |
++ <font><u>id</u></font> <i><font color="grey">int</font></i><br align="left"/>
++ i <i><font color="grey">int</font></i><br align="left"/>
+}>
+            fixedsize=true
+            width=2.2
+            height=1.0
+            fontname=arial
+            fontsize=18
+            fontcolor="mediumvioletred"
+            color="mediumvioletred"
+            style=bold
+        ]
+
+        sent [
+            shape=record
+            label= <{
+<b>sentence</b> |
++ <font><u>id</u></font> <i><font color="grey">int</font></i><br align="left"/>
++ i <i><font color="grey">int</font></i><br align="left"/>
+}>
+            fixedsize=true
+            width=2.2
+            height=1.0
+            fontname=arial
+            fontsize=18
+            fontcolor="mediumvioletred"
+            color="mediumvioletred"
+            style=bold
+        ]
+
+        span [
+            shape=record
+            label= <{
+<b>span</b> |
++ attrs <i><font color="grey">jsonb</font></i><br align="left"/>
+}>
+            fixedsize=true
+            width=2.2
+            height=0.8
+            fontname=arial
+            fontsize=18
+            fontcolor="mediumvioletred"
+            color="mediumvioletred"
+            style=bold
+        ]
+
+//         xmlspan [
+//             shape=record
+//             label= <{
+// <b>xmlspan</b> |
+// + tag <i><font color="grey">text</font></i><br align="left"/>
+// }>
+//             fixedsize=true
+//             width=2.2
+//             height=0.8
+//             fontname=arial
+//             fontsize=18
+//             fontcolor="mediumvioletred"
+//             color="mediumvioletred"
+//             style=bold
+//         ]
+
+        token [
+            shape=record
+            label= <{
+<b>token</b> |
+_ <font color="mediumvioletred">sent</font> <i><font color="grey">int</font></i><br align="left"/>
++ i <i><font color="grey">smallint</font></i><br align="left"/>
++ idx <i><font color="grey">int</font></i><br align="left"/>
++ len <i><font color="grey">smallint</font></i><br align="left"/>
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=1.4
+            fontname=arial
+            fontsize=18
+            fontcolor="blue"
+            color="blue"
+        ]
+
+        punct [
+            shape=record
+            label= <{
+<b>punct</b> |
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=0.8
+            fontname=arial
+            fontsize=18
+            fontcolor="blue"
+            color="blue"
+        ]
+
+        word [
+            shape=record
+            label= <{
+<b>word</b> |
+_ <font color="skyblue">lexeme</font> <i><font color="grey">int</font></i><br align="left"/>
+_ <font color="violet">dep</font> <i><font color="grey">smallint</font></i><br align="left"/>
++ head <i><font color="grey">int</font></i><br align="left"/>
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=1.2
+            fontname=arial
+            fontsize=18
+            fontcolor="blue"
+            color="blue"
+        ]
+
+
+        digit [
+            shape=record
+            label= <{
+<b>digit</b> |
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=0.8
+            fontname=arial
+            fontsize=18
+            fontcolor="blue"
+            color="blue"
+        ]
+
+        lemma [
+            shape=record
+            label= <{
+<b>lemma</b> |
++ <font color="violet"><u>id</u></font> <i><font color="grey">int</font></i><br align="left"/>
++ <font color="violet">s</font> <i><font color="grey">string</font></i><br align="left"/>
++ <font color="violet">vec</font> <i><font color="grey">pgvector</font></i><br align="left"/>
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=1.2
+            fontname=arial
+            fontsize=18
+            fontcolor="violet"
+            color="violet"
+        ]
+
+        lexeme [
+            shape=record
+            label= <{
+<b>lexeme</b> |
++ <font color="skyblue"><u>id</u></font> <i><font color="grey">int</font></i><br align="left"/>
++ <font color="skyblue">norm</font> <i><font color="grey">text</font></i><br align="left"/>
+_ <font color="violet">lemma</font> <i><font color="grey">int</font></i><br align="left"/>
+_ <font color="violet">pos</font> <i><font color="grey">smallint</font></i><br align="left"/>
+_ <font color="violet">morph</font> <i><font color="grey">smallint</font></i><br align="left"/>
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=1.8
+            fontname=arial
+            fontsize=18
+            fontcolor="skyblue"
+            color="skyblue"
+        ]
+
+        pos [
+            shape=record
+            label= <{
+<b>pos</b> |
++ <font color="violet"><u>id</u></font> <i><font color="grey">smallint</font></i><br align="left"/>
++ <font color="violet">name</font> <i><font color="grey">text</font></i><br align="left"/>
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=1
+            fontname=arial
+            fontsize=18
+            fontcolor="violet"
+            color="violet"
+        ]
+
+        dep [
+            shape=record
+            label= <{
+<b>dep</b> |
++ <font color="violet"><u>id</u></font> <i><font color="grey">smallint</font></i><br align="left"/>
++ <font color="violet">name</font> <i><font color="grey">text</font></i><br align="left"/>
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=1
+            fontname=arial
+            fontsize=18
+            fontcolor="violet"
+            color="violet"
+        ]
+
+        morph [
+            shape=record
+            label= <{
+<b>morph</b> |
++ <font color="violet"><u>id</u></font> <i><font color="grey">smallint</font></i><br align="left"/>
++ <font color="violet">feats</font> <i><font color="grey">text</font></i><br align="left"/>
++ <font color="violet">j</font> <i><font color="grey">jsonb</font></i><br align="left"/>
++ <font color="violet">number</font> <i><font color="grey">text</font></i><br align="left"/>
++ <font color="violet">person</font> <i><font color="grey">text</font></i><br align="left"/>
++ <font color="violet">tense</font> <i><font color="grey">text</font></i><br align="left"/>
++ <font color="violet">mood</font> <i><font color="grey">text</font></i><br align="left"/>
++ <font color="violet">voice</font> <i><font color="grey">text</font></i><br align="left"/>
+[...]
+}>
+            style=bold
+            fixedsize=true
+            width=2.2
+            height=2.7
+            fontname=arial
+            fontsize=18
+            fontcolor="violet"
+            color="violet"
+        ]
+
+        string -> seg [label=is_in color="turquoise" fontcolor="turquoise" dir=back fontname=arial]
+        // seg -> sent [style=dashed arrowhead=empty color="mediumvioletred" dir=back]
+        seg -> par [style=dashed arrowhead=empty color="mediumvioletred" dir=back]
+        seg -> span [style=dashed arrowhead=empty color="mediumvioletred" dir=back]
+        // span -> xmlspan [style=dashed arrowhead=empty color="mediumvioletred" dir=back]
+
+        sent -> token [label=is_in color="mediumvioletred" fontcolor="mediumvioletred" dir=back fontname=arial]
+        par -> sent [label=is_in color="mediumvioletred" fontcolor="mediumvioletred" dir=back fontname=arial]
+
+        token -> word [style=dashed arrowhead=empty color="blue" dir=back]
+        token -> punct [style=dashed arrowhead=empty color="blue" dir=back]
+        token -> digit [style=dashed arrowhead=empty color="blue" dir=back]
+
+        word -> lexeme [label=has_lexeme color="skyblue" fontcolor="skyblue" fontname=arial]
+        word -> dep [label=has_dep color=violet fontcolor=violet fontname=arial]
+        lexeme -> lemma [label=has_lemma color=violet fontcolor=violet fontname=arial]
+        lexeme -> pos [label=has_pos color=violet fontcolor=violet fontname=arial]
+        lexeme -> morph [label=has_morph color=violet fontcolor=violet fontname=arial]
+
+    }
+}

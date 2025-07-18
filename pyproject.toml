@@ -1,0 +1,37 @@
+[project]
+name = "litteralement"
+authors = [{name="thjbdvlt"}]
+version = "0.1.0"
+description = "base de données postgresql pour l'analyse de textes en français."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "psycopg[binary]",
+    "spacy",
+    "tqdm",
+]
+
+[project.scripts]
+litteralement = "litteralement.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/thjbdvlt/litteralement"
+
+[tool.setuptools]
+py-modules = ["solipcysme"]
+
+[build-system]
+requires = ["setuptools>=74.1", "cython", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.ruff]
+exclude = []
+line-length = 72
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = false
