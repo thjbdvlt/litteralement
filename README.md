@@ -52,7 +52,7 @@ nlpg copy -d 'mydatabase' *.json
 nlpg copy --dbname 'mydatabase' --jsonl *.jsonl
 ```
 
-# Annotation de textes
+### Annotation de textes
 
 Pour annoter des textes avec [spaCy](https://spacy.io/) et ajouter le résultat des annotations dans les tables, on utilise la commande `annotate`, qui requière deux arguments: `model` et `query`. Ce dernier doit être un fichier (ou `-` pour lire depuis `stdin`) contenant une requête SQL retournant deux colonnes: un `text` (leur contenu) et un `int` (l'`id` des textes).
 
@@ -67,13 +67,13 @@ EOF
 
 La distinction entre les *mots* et les autres *tokens* se fait en utilisant l'attribut `Token._.isword`. Par défault, tous les *tokens* seront considérés comme des mots. Si le pipeline utilisé définit une extension `Token._.isword`, celle-ci sera utilisée pour faire la distinction. L'option `-w`/`--isword` permet également de passer une fonction, laquelle doit être enregistrée le [registry misc](https://spacy.io/api/top-level#registry) de spaCy.
 
-## Options
+### Options
 
 La liste complète des options est disponible *via* l'option `-h`, `--help`.
 
-## Tables
+### Tables
 
-### nlpg
+#### nlpg
 
 Si la structure du schéma __nlpg__ n'est pas spécifique à une librairie de _NLP_[^5], elle est toutefois désignée de façon à fonctionner avec [spaCy](https://spacy.io/). La délimitation des différents objets est peut-être relativement spécifique à la langue française.
 En particulier, la table `lexeme` (le mot hors contexte, comme élément du lexique) définit un objet qui regroupe des caractéristiques attribuées par [spaCy](https://spacy.io/) aux `token`s, mais qui en français ne varient pas d'un contexte à l'autre. En français, peu importe dans quel contexte on rencontrera le mot "magiques", il n'agira toujours de l'adjectif (_part-of-speech_) "magique" (_lemma_) au pluriel (_morphology_), et sa forme graphique canonique (_norm_) sera toujours "magique". Il est donc inutile d'attribuer ces quatre propriétés à chaque occurrence du mot "magique": les propriétés `lemma`, `pos`, `norm` et `morph` sont donc, dans une base de données __nlpg__, des propriétés des `lexemes` tandis que les `words` ont des propriétés contextuelles: `dep` (la fonction grammaticale, par exemple "obj"), `head` (noyau), ainsi que les propriétés héritées des `tokens` (`len`, `i`, `idx`), à quoi s'ajoute la référence au `lexeme` dont ils sont une instance. L'ensemble des lignes de la table `word` constitue donc le _discours_ (les mots réels) tandis que l'ensemble des lignes de la table `lexeme` constitue le _lexique_[^6] (les mots possibles).
@@ -90,7 +90,7 @@ Lors de l'annotation de textes avec la commande `annotate`, des __vues__ sont au
 
 [^6]: De la même manière que dans n'importe quel lexique ou dictionnaire, un même forme graphique peut être utilisée dans différentes entrées lexicale: *être-verbe*, *être-nom*, etc.
 
-### eav
+#### eav
 
 Le schéma `eav` est organisé en deux niveaux. Le premier niveau concerne l'ontologie et est constitué des classes d'objets (ex. "personne"), des types de propriétés (ex. "nom") et des types de relations (ex. "connaît"). Le second niveau concerne les individus (lesquels constituent le monde): les objets eux-mêmes (telle personne), les instances de relations (telle relation entre deux personnes particulières) et les instances de propriétés (le nom de telle personne).
 
@@ -136,7 +136,7 @@ L'importation se fait à l'aide de la commande `copy`. Tous les arguments positi
 nlpg copy -d mydatabase data1.json data2.json ../*.json
 ```
 
-# Concordance
+## Concordance
 
 Des fonctions minimales sont disponibles pour des concordances. Une utilisation minimale:
 
@@ -169,7 +169,7 @@ ORDER BY
     x.right_context;
 ```
 
-# TODO
+## TODO
 
 - [ ] Fonction d'ajout automatique de `span` à partir de html/xml.
 - [ ] Ajout des annotations de `ents` et `spans`.
