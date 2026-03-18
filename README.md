@@ -1,10 +1,8 @@
-nlpg
-=============
+# nlpg
 
 __nlpg__ est un schéma de base de données [PostgreSQL](https://www.postgresql.org/) pour l'analyse automatique de textes en français, conçu pour stocker les annotations produites par la librairie [spaCy](https://spacy.io/). C'est aussi une interface minimale en ligne de commande permettant de facilement ajouter des données, d'annoter les textes (avec [spaCy](https://spacy.io/)) et de placer le résultat de ces annotations dans la base de données (voir [usage](#usage), plus bas).
 
-schémas
--------
+## Schémas
 
 Les tables du schéma [nlpg](#nlpg) sont destinées à recevoir les données typiquement produites lors de l'annotation automatique par des librairies de _NLP_ (_token_, _word_, _lemma_, _pos_, _dep_, _feats_, etc.). Elles sont organisées de façon à optimiser les performances et l'espace utilisé[^DatabaseNormalization].
 
@@ -26,12 +24,11 @@ Le diagramme ci-dessous représente la structure de la base de données. Chaque 
 
 [^7]: Exemple typique, extrait de la documentation de PostgreSQL: villes et capitales; la table capitale _hérite_ de la table _ville_ (les capitales sont un type spécifique de ville), auquel est ajoutée des propriétés ou contraintes (ex. "état").
 
-usage
------
+## Usage
 
 __nlpg__ est aussi une mini-interface en ligne de commande permettant de rapidement ajouter des données dans les tables à partir de fichiers JSON (ou JSONL) ou d'annoter des textes et d'insérer les annotations dans les tables (_tokens_, _lemmes_, etc.).
 
-### création de la base de données
+### Création de la base de données
 
 Pour construire une base de données complète, constituée du schéma __nlpg__ et du schéma __eav__:
 
@@ -46,7 +43,7 @@ Pour ajouter le schéma __nlpg__ à une base de données existante, il faut spé
 nlpg schema nlpg -t 'public.texte.id' -d myd
 ```
 
-### insertion de données (schéma EAV)
+### Insertion de données (schéma EAV)
 
 Pour importer dans les tables du modèle EAV des données au format JSON ou JSONL (respectant une structure spécifique décrite plus bas):
 
@@ -55,7 +52,7 @@ nlpg copy -d 'mydatabase' *.json
 nlpg copy --dbname 'mydatabase' --jsonl *.jsonl
 ```
 
-# annotation de textes
+# Annotation de textes
 
 Pour annoter des textes avec [spaCy](https://spacy.io/) et ajouter le résultat des annotations dans les tables, on utilise la commande `annotate`, qui requière deux arguments: `model` et `query`. Ce dernier doit être un fichier (ou `-` pour lire depuis `stdin`) contenant une requête SQL retournant deux colonnes: un `text` (leur contenu) et un `int` (l'`id` des textes).
 
@@ -70,13 +67,11 @@ EOF
 
 La distinction entre les *mots* et les autres *tokens* se fait en utilisant l'attribut `Token._.isword`. Par défault, tous les *tokens* seront considérés comme des mots. Si le pipeline utilisé définit une extension `Token._.isword`, celle-ci sera utilisée pour faire la distinction. L'option `-w`/`--isword` permet également de passer une fonction, laquelle doit être enregistrée le [registry misc](https://spacy.io/api/top-level#registry) de spaCy.
 
-options
--------
+## Options
 
 La liste complète des options est disponible *via* l'option `-h`, `--help`.
 
-tables
-------
+## Tables
 
 ### nlpg
 
@@ -105,8 +100,7 @@ Le schéma `eav` est organisé en deux niveaux. Le premier niveau concerne l'ont
 
 C'est par la table __string__ que sont mises en lien les deux parties de la base de données. Elle hérite de la table __attribute__, tout comme les tables __attr_int__ ou __attr_float__, mais elle a également une colonne `id` qui est référencée par les tables __par__, __sent__, __span__.
 
-format d'importation (eav)
---------------------
+## Format d'importation (eav)
 
 Si l'insertion d'entités, de propriétés ou de relations peut évidemment se faire manuellement, il est aussi possible d'importer des données structurées au format JSON comme suit, chaque objet JSON décrivant une entité, ses propriétés et les relations dont elle est le sujet.
 
@@ -142,7 +136,7 @@ L'importation se fait à l'aide de la commande `copy`. Tous les arguments positi
 nlpg copy -d mydatabase data1.json data2.json ../*.json
 ```
 
-# concordance
+# Concordance
 
 Des fonctions minimales sont disponibles pour des concordances. Une utilisation minimale:
 
